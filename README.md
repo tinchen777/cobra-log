@@ -1,11 +1,13 @@
 <div align="center">
 
-<h2 id="title">cobra-log</h2>
+<h2 id="title">🐱‍👓 cobra-log 🐱‍👓</h2>
 
-[![Build](https://github.com/tinchen777/cobra-log/actions/workflows/tests.yml/badge.svg)](https://github.com/tinchen777/cobra-log/actions/workflows/tests.yml)
 [![PyPI version](https://img.shields.io/pypi/v/cobra-log.svg)](https://pypi.org/project/cobra-log/)
-![Python Versions](https://img.shields.io/pypi/pyversions/cobra-log.svg)
+![Python](https://img.shields.io/pypi/pyversions/cobra-log.svg)
+[![Tests](https://github.com/tinchen777/cobra-log/actions/workflows/test.yml/badge.svg)](https://github.com/tinchen777/cobra-log/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/tinchen777/cobra-log/branch/main/graph/badge.svg)](https://codecov.io/gh/tinchen777/cobra-log)
 ![License](https://img.shields.io/github/license/tinchen777/cobra-log.svg)
+
 [![Pull Requests Welcome](https://img.shields.io/badge/pull%20requests-welcome-brightgreen.svg)](https://github.com/tinchen777/cobra-log/pulls)
 ![Github stars](https://img.shields.io/github/stars/tinchen777/cobra-log.svg)
 
@@ -13,16 +15,17 @@
 
 ## About
 
-A lightweight Python library for enhanced terminal display: simple text color/style conventions and image-to-terminal rendering.
+A lightweight and easy-to-use logging library for Python.
 
 - Python: 3.9+
-- Runtime deps: Pillow (>=9,<11), NumPy (>=1.21,<2)
+- Runtime dependency: `cobra-color`.
 
 ## Features
 
-- :rocket: Concise color/style names for terminal text.
-- :rocket: Image rendering in multiple modes: ASCII, color, half-color, gray, half-gray.
-- :rocket: Minimal dependencies and easy integration.
+- 🚀 Colorful or styled terminal output (`color`, `style`, `plain`).
+- 🚀 Optional file persistence with rotation.
+- 🚀 Concise exception chaining via `trace_exc`.
+- 🚀 Simple, dependency-light design.
 
 ## Installation
 
@@ -33,6 +36,16 @@ pip install cobra-log
 ```
 
 ## Quick Start
+
+- Simple warning
+
+  ```python
+  from cobra_log import warning
+
+  warning("warning message")
+  ```
+
+## Example
 
 ```python
 from cobra_log import (log_init, info, warning, trace_exc)
@@ -50,21 +63,10 @@ except Exception as e:
     info("Continuing execution after warning.")
 ```
 
-## Image Modes
-
-- ascii: monochrome ASCII using a density charset.
-- color: colorized character fill.
-- half-color: half-block characters with color (higher density, good visual quality).
-- gray: grayscale characters.
-- half-gray: half-block grayscale.
-
-Tip: For best results, use a TrueColor-capable terminal and a monospaced font.
-
 ## Requirements
 
 - Python >= 3.9
-- Pillow >= 9.0, < 11
-- NumPy >= 1.21, < 2.0
+- cobra-color >= 0.2.5
 
 ## License
 

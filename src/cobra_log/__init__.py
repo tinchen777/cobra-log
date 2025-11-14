@@ -3,7 +3,7 @@
 cobra-log
 ----
 
-A lightweight and colorful logging library for Python.
+A lightweight and easy-to-use logging library for Python.
 
 _Example:_
 
