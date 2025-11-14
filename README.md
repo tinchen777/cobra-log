@@ -34,34 +34,21 @@ pip install cobra-log
 
 ## Quick Start
 
-- Render a text in the terminal:
+```python
+from cobra_log import (log_init, info, warning, trace_exc)
 
-    ```python
-    from cobra_log import ctext
+# Initialize the log system
+log_init("log_save_path", display_type="style")
 
-    print(ctext("Hello World!", fg="r", styles=["bold"]))
-    ```
-
-- Render an image in the terminal:
-
-    ```python
-    from cobra_log.draw import fmt_image
-
-    # ASCII art
-    print(fmt_image("example.jpg", width=80, mode="ascii"))
-
-    # Half-block color (recommended for truecolor terminals)
-    print(fmt_image("example.jpg", width=80, mode="half-color"))
-    ```
-
-- Render some text with fonts in the terminal:
-
-    ```python
-    from cobra_log.draw import fmt_font, FontName
-
-    # Borderless grayscale font
-    print(fmt_font("Hello World!", font=FontName.LLDISCO,, mode="half-gray", trim_border=True))
-    ```
+try:
+    try:
+        1 / 0  # This will raise a ZeroDivisionError
+    except Exception as e1:
+        raise RuntimeError(trace_exc("This is the main exception", e1))
+except Exception as e:
+    warning("A warning occurred.", e)
+    info("Continuing execution after warning.")
+```
 
 ## Image Modes
 

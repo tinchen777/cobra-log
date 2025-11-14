@@ -6,26 +6,32 @@ from __future__ import annotations
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from cobra_color import smart_print
 from typing import (Any, Optional, Type)
 
-from .types import LogLevelName
+from .types import (LogLevelName, LogDisplayType)
 
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
-FILE_HANDLER = None
+_LOG_FMT = r"%(asctime)s - <%(levelname)s> - <%(filename)s(%(funcName)s)-%(lineno)d> - %(message)s"
+_DATE_FMT = r"%y-%m-%d %H:%M:%S"
+# Display type
+_LOG_DISPLAY_TYPES = ("color", "style", "plain")
+_DISPLAY_TYPE = "color"
 
-LOG_FMT = r"%(asctime)s - <%(levelname)s> - <%(filename)s(%(funcName)s)-%(lineno)d> - %(message)s"
-DATE_FMT = r"%y-%m-%d %H:%M:%S"
+# Logger instance
+_LOGGER = logging.getLogger(__name__)
+_LOGGER.setLevel(logging.DEBUG)
+_FILE_HANDLER = None
 
 
 def log_init(
     log_save_path: Optional[str] = None,
     log_level: LogLevelName = "debug",
-    log_fmt: str = LOG_FMT,
-    date_fmt: str = DATE_FMT,
+    log_fmt: str = _LOG_FMT,
+    date_fmt: str = _DATE_FMT,
     cover: bool = True,
-    backup_count: int = 0
+    backup_count: int = 0,
+    display_type: LogDisplayType = "color"
 ):
     r"""
     Initialize the log storage configuration.
@@ -66,6 +72,10 @@ def log_init(
             The number of log file backups.
             - `>0`: rolling log;
             - `<=0`: no backup, all logs are stored in one file.
+
+        display_type : LogDisplayType, default to `"color"`
+            The display type of terminal output.
+            ~ refer to `display_use()` for details.
     """
     # log level
     if log_level == "critical":
@@ -78,10 +88,10 @@ def log_init(
         level = logging.INFO
     else:
         level = logging.DEBUG
-
-    global FILE_HANDLER
-    if FILE_HANDLER and cover:
-        LOGGER.removeHandler(FILE_HANDLER)
+    # set logger handler
+    global _FILE_HANDLER
+    if _FILE_HANDLER and cover:
+        _LOGGER.removeHandler(_FILE_HANDLER)
 
     if log_save_path is not None and log_save_path.endswith(".log"):
         # create log directory
@@ -89,19 +99,42 @@ def log_init(
         if log_dir:
             os.makedirs(log_dir, exist_ok=True)
         # file handler
-        FILE_HANDLER = RotatingFileHandler(
+        _FILE_HANDLER = RotatingFileHandler(
             filename=log_save_path,
             mode="a",
             backupCount=backup_count,
             maxBytes=100*1024,
             delay=True
         )
-        LOGGER.addHandler(FILE_HANDLER)
-        FILE_HANDLER.setFormatter(logging.Formatter(
+        _LOGGER.addHandler(_FILE_HANDLER)
+        _FILE_HANDLER.setFormatter(logging.Formatter(
             fmt=log_fmt,
             datefmt=date_fmt
         ))
-        FILE_HANDLER.setLevel(level)
+        _FILE_HANDLER.setLevel(level)
+
+    # display type
+    display_use(display_type)
+
+
+def display_use(display_type: LogDisplayType):
+    r"""
+    Set the display type of terminal output.
+
+    Parameters
+    ----------
+        display_type : LogDisplayType
+            The display type of terminal output.
+            - `"color"`: Terminal output with color and font;
+            - `"style"`: Terminal output with font;
+            - `"plain"`: Plain terminal output.
+    """
+    _display_type = str(display_type).lower()
+    if _display_type in _LOG_DISPLAY_TYPES:
+        global _DISPLAY_TYPE
+        _DISPLAY_TYPE = _display_type
+    else:
+        smart_print(f"WARNING: Invalid Global Display Type '{display_type}'. Using '{_DISPLAY_TYPE}' Instead.")
 
 
 def exception(exctype: Type[BaseException], val: BaseException, traceback: Optional[Any], stack_level: int = 1):
@@ -125,8 +158,8 @@ def exception(exctype: Type[BaseException], val: BaseException, traceback: Optio
             - `1`: the caller of this function;
             - ...
     """
-    if FILE_HANDLER:
-        LOGGER.critical(
+    if _FILE_HANDLER:
+        _LOGGER.critical(
             f"[{exctype.__name__}] - {val}",
             exc_info=(exctype, val, traceback),
             stacklevel=1 + stack_level

@@ -1,5 +1,5 @@
 r"""
-Module of exceptions for `cobra-log`.
+Module of exceptions.
 """
 
 

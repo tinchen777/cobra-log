@@ -4,14 +4,15 @@
 
 from __future__ import annotations
 from cobra_color import (ctext, smart_print)
+from cobra_color.color import ColorStr
 from typing import Any
 
-from .core import LOGGER, FILE_HANDLER
+from . import core
 from .exceptions import CriticalException
 from .utils import (trace_exc, stack_trace)
 
 
-EXC_FMT = " [%(fileName)s->%(funcName)s(%(lineno)d)]"
+_EXC_FMT = r" [%(fileName)s->%(funcName)s(%(lineno)d)]"
 
 
 def _loc_trace(stack_level: Any):
@@ -24,9 +25,21 @@ def _loc_trace(stack_level: Any):
         fmt_level = 1
 
     return stack_trace(
-        fmt=EXC_FMT,
+        fmt=_EXC_FMT,
         stack_level=fmt_level
     )
+
+
+def _display_msg(c_msg: ColorStr):
+    r"""
+    Output display message according to the current display type.
+    """
+    if core._DISPLAY_TYPE == "color":
+        return c_msg
+    elif core._DISPLAY_TYPE == "style":
+        return c_msg.style_only
+    else:
+        return c_msg.plain
 
 
 def critical(__msg: str = "", *exc: Any, throw: bool = True, loc: bool = True, stack_level: int = 1):
@@ -71,15 +84,15 @@ def critical(__msg: str = "", *exc: Any, throw: bool = True, loc: bool = True, s
     # exception
     msg = trace_exc(__msg, *exc)
     # log
-    if FILE_HANDLER:
-        LOGGER.critical(msg, stack_info=True, stacklevel=2)
+    if core._FILE_HANDLER:
+        core._LOGGER.critical(msg, stack_info=True, stacklevel=2)
     # loc_str
     loc_str = _loc_trace(stack_level) if loc else ""
     # colored message
     c_msg = ctext(f"CRITICAL-ERROR{loc_str}: {msg}", fg="w", bg="r", styles={"bold"})
 
     if throw:
-        raise CriticalException(c_msg)
+        raise CriticalException(_display_msg(c_msg))
 
     return c_msg.plain
 
@@ -125,15 +138,15 @@ def error(__msg: str = "", *exc: Any, stack_info: bool = False, throw: bool = Tr
     # exception
     msg = trace_exc(__msg, *exc)
     # log
-    if FILE_HANDLER:
-        LOGGER.error(msg, stack_info=stack_info, stacklevel=2)
+    if core._FILE_HANDLER:
+        core._LOGGER.error(msg, stack_info=stack_info, stacklevel=2)
     # loc_str
     loc_str = _loc_trace(stack_level) if loc else ""
     # colored message
     c_msg = ctext(f"ERROR{loc_str}: {msg}", fg="d", bg="y", styles={"bold"})
 
     if throw:
-        smart_print(c_msg)
+        smart_print(_display_msg(c_msg))
 
     return c_msg.plain
 
@@ -179,15 +192,15 @@ def warning(__msg: str = "", *exc: Any, throw: bool = True, loc: bool = True, di
     # exception
     msg = trace_exc(__msg, *exc)
     # log
-    if FILE_HANDLER:
-        LOGGER.warning(msg, stacklevel=2)
+    if core._FILE_HANDLER:
+        core._LOGGER.warning(msg, stacklevel=2)
     # loc_str
     loc_str = _loc_trace(stack_level) if loc else ""
     # colored message
     c_msg = ctext(f"WARNING{loc_str}: {msg}", fg="y", styles=None if dim else {"bold"})
 
     if throw:
-        smart_print(c_msg)
+        smart_print(_display_msg(c_msg))
 
     return c_msg.plain
 
@@ -239,8 +252,8 @@ def info(__msg: str = "", *exc: Any, level: int = 1, throw: bool = True, outline
     # exception
     msg = trace_exc(__msg, *exc)
     # log
-    if FILE_HANDLER:
-        LOGGER.info(msg, stacklevel=2)
+    if core._FILE_HANDLER:
+        core._LOGGER.info(msg, stacklevel=2)
     # loc_str
     loc_str = _loc_trace(stack_level) if loc else ""
     # style
@@ -255,7 +268,7 @@ def info(__msg: str = "", *exc: Any, level: int = 1, throw: bool = True, outline
     c_msg = ctext(f"{prefix}INFO{loc_str}: {msg}{end}", fg=font, styles={"bold"})
 
     if throw:
-        smart_print(c_msg)
+        smart_print(_display_msg(c_msg))
 
     return c_msg.plain
 
@@ -272,5 +285,5 @@ def debug(*args: Any, **kwargs: Any):
     for arg_name, arg_val in kwargs.items():
         msg += f"\n[{arg_name}]: {arg_val}"
     # log
-    if FILE_HANDLER and msg:
-        LOGGER.debug(msg, stacklevel=2)
+    if core._FILE_HANDLER and msg:
+        core._LOGGER.debug(msg, stacklevel=2)
