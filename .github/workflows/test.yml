@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -33,8 +33,9 @@ jobs:
           pip install -e .
 
       - name: Run tests with coverage
-        run: pytest --cov=cobra_color --cov-report=xml --cov-report=term
+        run: pytest --cov=cobra_color --cov-branch --cov-report=xml --cov-report=term
 
-      - name: Report coverage
-        shell: bash
-        run: bash <(curl -s https://codecov.io/bash)
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

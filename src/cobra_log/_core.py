@@ -5,23 +5,80 @@
 from __future__ import annotations
 import logging
 from logging.handlers import RotatingFileHandler
+import warnings
 import os
-from cobra_color import smart_print
-from typing import (Any, Optional, Type)
+from typing import (Any, Optional)
 
-from .types import (LogLevelName, LogDisplayType)
+from .types import LogLevelName
 
 
 _LOG_FMT = r"%(asctime)s - <%(levelname)s> - <%(filename)s(%(funcName)s)-%(lineno)d> - %(message)s"
 _DATE_FMT = r"%y-%m-%d %H:%M:%S"
-# Display type
-_LOG_DISPLAY_TYPES = ("color", "style", "plain")
-_DISPLAY_TYPE = "color"
 
 # Logger instance
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 _FILE_HANDLER = None
+# cstr & smart_print
+try:
+    from cobra_color import (cstr as t_cstr, safe_print as t_safe_print)  # type: ignore
+    _COLOR_AVAIL = True
+except ImportError:
+    warnings.warn(
+        "Missing Color Library <cobra-color>, <cobra-log> Using `Stable Plain` Display Instead.",
+        category=UserWarning,
+        stacklevel=3,
+    )
+    _COLOR_AVAIL = False
+
+_USE_COLOR: bool = _COLOR_AVAIL
+
+
+def cstr(*objects: Any, sep: str = "", **kwargs):
+    if _USE_COLOR:
+        return t_cstr(*objects, sep=sep, **kwargs)
+    return sep.join(objects)
+
+
+def display(*args, **kwargs):
+    if _COLOR_AVAIL:
+        return t_safe_print(*args, **kwargs)
+    print(*args, **kwargs)
+
+
+def enable_color(flag: bool = True, /):
+    r"""
+    Enable or disable colored terminal output.
+    """
+    global _USE_COLOR
+    _USE_COLOR = flag and _COLOR_AVAIL
+
+
+# trace display
+_TRACE_CONFIG = {
+    "with_border": True,
+    "exc_depth": -1,
+    "tb_depth": -1,
+    "exc_args_limit": -1,
+    "min_width": 50
+}
+
+
+def set_trace(**kwargs: Any):
+    r"""
+    Set the global trace display configuration.
+
+    Parameters
+    ----------
+        **kwargs : Any
+            The trace display configuration to be updated. Including:
+            - `with_border`: bool
+            - `exc_depth`: int
+            - `tb_depth`: Optional[int]
+            - `exc_args_limit`: int
+    """
+    global _TRACE_CONFIG
+    _TRACE_CONFIG.update(kwargs)
 
 
 def log_init(
@@ -31,7 +88,7 @@ def log_init(
     date_fmt: str = _DATE_FMT,
     cover: bool = True,
     backup_count: int = 0,
-    display_type: LogDisplayType = "color"
+    use_color: bool = True
 ):
     r"""
     Initialize the log storage configuration.
@@ -73,9 +130,8 @@ def log_init(
             - `>0`: rolling log;
             - `<=0`: no backup, all logs are stored in one file.
 
-        display_type : LogDisplayType, default to `"color"`
-            The display type of terminal output.
-            ~ refer to `display_use()` for details.
+        use_color : bool, default to `True`
+            Control whether to enable colored terminal output.
     """
     # log level
     if log_level == "critical":
@@ -113,54 +169,5 @@ def log_init(
         ))
         _FILE_HANDLER.setLevel(level)
 
-    # display type
-    display_use(display_type)
-
-
-def display_use(display_type: LogDisplayType):
-    r"""
-    Set the display type of terminal output.
-
-    Parameters
-    ----------
-        display_type : LogDisplayType
-            The display type of terminal output.
-            - `"color"`: Terminal output with color and font;
-            - `"style"`: Terminal output with font;
-            - `"plain"`: Plain terminal output.
-    """
-    _display_type = str(display_type).lower()
-    if _display_type in _LOG_DISPLAY_TYPES:
-        global _DISPLAY_TYPE
-        _DISPLAY_TYPE = _display_type
-    else:
-        smart_print(f"WARNING: Invalid Global Display Type '{display_type}'. Using '{_DISPLAY_TYPE}' Instead.")
-
-
-def exception(exctype: Type[BaseException], val: BaseException, traceback: Optional[Any], stack_level: int = 1):
-    r"""
-    General exception and `log` record. Stored as `log` requires `log_init()`.
-
-    Parameters
-    ----------
-        exctype : type[BaseException]
-            The type of exception.
-
-        val : BaseException
-            The exception statement.
-
-        traceback : Optional[Any]
-            The exception trace.
-
-        stack_level : int, default to `1`
-            The stack level of the function call.
-            - `0`: this function;
-            - `1`: the caller of this function;
-            - ...
-    """
-    if _FILE_HANDLER:
-        _LOGGER.critical(
-            f"[{exctype.__name__}] - {val}",
-            exc_info=(exctype, val, traceback),
-            stacklevel=1 + stack_level
-        )
+    # enable color
+    enable_color(use_color)

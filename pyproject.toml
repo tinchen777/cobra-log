@@ -12,8 +12,14 @@ authors = [
     {name = "Zhen Tian", email = "zhen.tian.cs@gmail.com"}
 ]
 requires-python = ">=3.9"
-dependencies = [
-    "cobra_color>=0.2.5"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 [project.urls]

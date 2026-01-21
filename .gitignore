@@ -215,3 +215,7 @@ __marimo__/
 draft.py
 
 history/
+
+.draft/
+
+*.log
