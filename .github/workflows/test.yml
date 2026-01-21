@@ -33,7 +33,7 @@ jobs:
           pip install -e .
 
       - name: Run tests with coverage
-        run: pytest --cov=cobra_color --cov-branch --cov-report=xml --cov-report=term
+        run: pytest --cov=cobra_log --cov-branch --cov-report=xml --cov-report=term
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
