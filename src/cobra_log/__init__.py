@@ -48,7 +48,7 @@ from ._utils import trace_stack
 
 
 __author__ = "Zhen Tian"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 __all__ = [
     "exceptions",  # module
