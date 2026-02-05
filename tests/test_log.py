@@ -21,5 +21,15 @@ def test_cobra_log():
         info("Continuing execution after warning.")
 
 
+def test_cobra_log_2():
+    try:
+        raise KeyError("This is the first exception")
+
+    except Exception as e:
+        warning("An error occurred during the test.", e, loc=True)
+        info("Continuing execution after warning.")
+
+
 if __name__ == "__main__":
     test_cobra_log()
+    test_cobra_log_2()

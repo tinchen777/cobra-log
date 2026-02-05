@@ -27,7 +27,7 @@ def b():
 
 def c():
     b()
-
+# FIXME
 
 
 def test_cobra_log():

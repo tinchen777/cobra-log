@@ -20,7 +20,8 @@ def _fmt_loc(loc: Union[bool, int], /):
     """
     if loc is False:
         return ""
-    return trace_stack(max(0, loc) if isinstance(loc, int) else 1, fmt=_EXC_FMT)
+    loc_level = 0 if loc is True else max(0, int(loc))
+    return trace_stack(loc_level + 3, fmt=_EXC_FMT)
 
 
 def _fmt_exc(exc: Any, /, top_indent: int, frame_style: str, indent: int = 0, **pattern: Any):
@@ -71,7 +72,7 @@ def critical(msg: str = "", exc: Optional[Any] = None, /, throw: bool = True, lo
         loc : bool, default to `True`
             Control whether to display file function location information.
             - `True`: Display `CRITICAL` location as stack level `1`;
-            - _int_: Display `CRITICAL` location according to stack level. i.e.: `0`: this function; `1`: the caller of this function; ...
+            - _int_: Display `CRITICAL` location according to stack level. i.e.: `0`: the location where the `CRITICAL` is called; `1`: the location of the parent function that calls the `CRITICAL`.; ...
 
     Returns
     -------
@@ -120,7 +121,7 @@ def error(msg: str = "", exc: Optional[Any] = None, /, throw: bool = True, loc: 
         loc : bool, default to `True`
             Control whether to display file function location information.
             - `True`: Display `ERROR` location as stack level `1`;
-            - _int_: Display `ERROR` location according to stack level. i.e.: `0`: this function; `1`: the caller of this function; ...
+            - _int_: Display `ERROR` location according to stack level. i.e.: `0`: the location where the `ERROR` is called; `1`: the location of the parent function that calls the `ERROR`.; ...
 
     Returns
     -------
@@ -164,8 +165,8 @@ def warning(msg: str = "", exc: Optional[Any] = None, /, throw: bool = True, loc
 
         loc : bool, default to `True`
             Control whether to display file function location information.
-            - `True`: Display `WARNING` location as stack level `1`;
-            - _int_: Display `WARNING` location according to stack level. i.e.: `0`: this function; `1`: the caller of this function; ...
+            - `True`: Display `WARNING` location as level `0`;
+            - _int_: Display `WARNING` location according to level. i.e.: `0`: the location where the `WARNING` is called; `1`: the location of the parent function that calls the `WARNING`.; ...
 
         dim : bool, default to `False`
             Control whether to dim the `WARNING` message.
@@ -216,7 +217,7 @@ def info(msg: str = "", exc: Optional[Any] = None, /, indent: int = 0, throw: bo
         loc : bool, default to `True`
             Control whether to display file function location information.
             - `True`: Display `INFO` location as stack level `1`;
-            - _int_: Display `INFO` location according to stack level. i.e.: `0`: this function; `1`: the caller of this function; ...
+            - _int_: Display `INFO` location according to stack level. i.e.: `0`: the location where the `INFO` is called; `1`: the location of the parent function that calls the `INFO`.; ...
 
         outline : bool, default to `False`
             Control whether to highlight the `INFO` message.
