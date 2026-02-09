@@ -5,7 +5,6 @@
 import inspect
 import os
 import traceback
-import warnings
 from typing import (Any, Tuple, List, Optional, Union, Sequence)
 
 from ._core import cstr, _TRACE_CONFIG
@@ -50,7 +49,33 @@ _FRAME = {
 }
 
 
-def box_lines(lines: Sequence[str], top_indent: int = 0, rest_indent: int = 0, frame_style: str = "light", **pattern: Any) -> str:
+def box_lines(lines: Sequence[str], /, top_indent: int = 0, rest_indent: int = 0, frame_style: str = "light", **pattern: Any) -> str:
+    r"""
+    Box the lines with a border.
+
+    Parameters
+    ----------
+        lines : Sequence[str]
+            The lines to be boxed.
+
+        top_indent : int, default to `0`
+            The number of spaces to indent for the top border line.
+
+        rest_indent : int, default to `0`
+            The number of spaces to indent for the rest lines.
+
+        frame_style : str, default to `"light"`
+            The border style name of :attr:`_FRAME`, including `"light"`, `"double"` and `"heavy"`.
+
+        **pattern : Any
+            The color pattern for the border, including `fg`, `bg` and `styles`.
+            See also :func:`cobra_color.cstr` for details.
+
+    Returns
+    -------
+        str
+            The boxed lines as a string.
+    """
     frame = _FRAME[frame_style]
     rest_indent = max(0, rest_indent)
     # width
@@ -97,7 +122,7 @@ def trace_stack(stack_level: int = 1, /, fmt: str = _TRACE_FMT) -> str:
             - ...
 
         fmt : str, default to TRACE_FMT
-            The format string, `TRACE_FMT` is defined as `r"%(fileName)s->%(funcName)s(%(lineno)d)"`.
+            The format string, :attr:`_TRACE_FMT` is defined as `r"%(fileName)s->%(funcName)s(%(lineno)d)"`.
             Includes:
             - `%(stackDepth)d`: stack depth;
             - `%(funcName)s`: function name;
@@ -111,27 +136,25 @@ def trace_stack(stack_level: int = 1, /, fmt: str = _TRACE_FMT) -> str:
         str
             Formatted stack information.
     """
-    try:
-        total_stack = inspect.stack()
-        frame_info = total_stack[stack_level][0]
-        total_depth = len(total_stack)  # total stack depth
+    total_stack = inspect.stack()
+    stack_level = min(max(0, stack_level), len(total_stack) - 1)
+    frame_info = total_stack[stack_level][0]
+    # format
+    args = {}
+    if r"%(stackDepth)d" in fmt:  # current stack depth
+        args["stackDepth"] = len(total_stack) - stack_level
+    if r"%(funcName)s" in fmt:  # current function name
+        args["funcName"] = frame_info.f_code.co_name
+    if r"%(filePath)s" in fmt:  # current file path
+        args["filePath"] = frame_info.f_code.co_filename
+    if r"%(fileName)s" in fmt:  # current file name
+        args["fileName"] = os.path.basename(frame_info.f_code.co_filename)
+    if r"%(lineno)d" in fmt:  # current line number
+        args["lineno"] = int(frame_info.f_lineno)
+    if r"%(funcLineno)d" in fmt:  # function start line number
+        args["funcLineno"] = frame_info.f_code.co_firstlineno
 
-        stackDepth = total_depth - stack_level  # current stack depth
-        funcName = frame_info.f_code.co_name  # current function name
-        filePath = frame_info.f_code.co_filename  # current file path
-        fileName = os.path.basename(filePath)  # current file name
-        lineno = int(frame_info.f_lineno)  # current line number
-        funcLineno = frame_info.f_code.co_firstlineno  # function start line number
-
-        return fmt % {"stackDepth": stackDepth, "funcName": funcName, "filePath": filePath, "fileName": fileName, "lineno": lineno, "funcLineno": funcLineno}
-
-    except Exception as e:
-        warnings.warn(
-            f"Trace Stack By Format {fmt!r} Error, Got <{e.__class__.__name__}> {e}",
-            category=UserWarning,
-            stacklevel=3,
-        )
-        return ""
+    return fmt % args
 
 
 def trace_exc(
@@ -153,18 +176,18 @@ def trace_exc(
         exc_depth : int, default to `-1`
             The maximum depth of exception chain to trace.
             - `< 1`: Trace all exceptions in the chain;
-            - `>= 1`: Trace the last `exc_depth` exceptions in the chain, omitting earlier exceptions.
+            - `>= 1`: Trace the last :param:`exc_depth` exceptions in the chain, omitting earlier exceptions.
 
         tb_depth : Optional[int], default to `-1`
             The maximum depth of traceback frames to trace for each exception.
             - `None`: Without traceback frames;
             - `< 1`: Trace all traceback frames;
-            - `>= 1`: Trace the last `tb_depth` traceback frames, omitting earlier frames.
+            - `>= 1`: Trace the last :param:`tb_depth` traceback frames, omitting earlier frames.
 
         exc_args_limit : int, default to `-1`
             The maximum number of exception arguments to display for each exception.
             - `< 1`: Display all exception arguments;
-            - `>= 1`: Display the first `exc_args_limit` exception arguments, omitting later arguments.
+            - `>= 1`: Display the first :param:`exc_args_limit` exception arguments, omitting later arguments.
 
         indent : int, default to `4`
             The number of spaces to indent for each level of exception in the chain.

@@ -25,9 +25,9 @@ try:
     _COLOR_AVAIL = True
 except ImportError:
     warnings.warn(
-        "Missing Color Library <cobra-color>, <cobra-log> Using `Stable Plain` Display Instead.",
+        "Missing color library `cobra-color`, terminal color display unavailable for `cobra-log`.",
         category=UserWarning,
-        stacklevel=3,
+        stacklevel=3
     )
     _COLOR_AVAIL = False
 
@@ -48,7 +48,7 @@ def display(*args, **kwargs):
 
 def enable_color(flag: bool = True, /):
     r"""
-    Enable or disable colored terminal output.
+    Enable or disable colored terminal display. Requires :pkg:`cobra-color`.
     """
     global _USE_COLOR
     _USE_COLOR = flag and _COLOR_AVAIL
@@ -98,13 +98,13 @@ def log_init(
     Parameters
     ----------
         log_save_path : Optional[str], default to `None`
-            The log file storage address. If invalid, no log file output stream is created.
+            The log file storage address. If is `None`, no log file output stream is created.
 
         log_level : LogLevelName, default to `"debug"`
-            The lowest level of log file storage, `LogLevelName` includes `"debug"`, `"info"`, `"warning"`, `"error"` and `"critical"`.
+            The lowest level of log file storage, :type:`LogLevelName` includes `"debug"`, `"info"`, `"warning"`, `"error"` and `"critical"`.
 
         log_fmt : str, default to LOG_FMT
-            The log storage format, `LOG_FMT` is defined as `r"%(asctime)s - <%(levelname)s> - <%(filename)s(%(funcName)s)-%(lineno)d> - %(message)s"`.
+            The log storage format, :attr:`_LOG_FMT` is defined as `r"%(asctime)s - <%(levelname)s> - <%(filename)s(%(funcName)s)-%(lineno)d> - %(message)s"`.
             Includes:
             - `%(levelno)s`: log level value;
             - `%(levelname)s`: log level name;
@@ -120,7 +120,7 @@ def log_init(
             - `%(name)s`: log handler name, default to root.
 
         date_fmt : _type_, default to DATE_FMT
-            The time storage format in the log, `DATE_FMT` is defined as `r"%y-%m-%d %H:%M:%S"`.
+            The time storage format in the log, :attr:`_DATE_FMT` is defined as `r"%y-%m-%d %H:%M:%S"`.
 
         cover : bool, default to `True`
             Control whether to cover the latest storage configuration instance.
@@ -131,7 +131,7 @@ def log_init(
             - `<=0`: no backup, all logs are stored in one file.
 
         use_color : bool, default to `True`
-            Control whether to enable colored terminal output.
+            Control whether to enable colored terminal display. Requires :pkg:`cobra-color`.
     """
     # log level
     if log_level == "critical":

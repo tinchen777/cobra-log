@@ -47,25 +47,26 @@ pip install cobra-log
 ## Example
 
 ```python
-from cobra_log import (log_init, info, warning)
+from cobra_log import (log_init, info, warning, error)
 
 # Initialize the log system
-log_init("log_save_path", display_type="style")
+log_init("log_save_path.log", use_color=True)
 
 try:
     try:
         1 / 0  # This will raise a ZeroDivisionError
     except Exception as e1:
         raise RuntimeError("This is the main exception")
-except Exception as e:
-    warning("A warning occurred.", e)
+except Exception:
+    warning("A warning occurred.")
     info("Continuing execution after warning.")
+    error("An error message", throw=True)
 ```
 
 ## Requirements
 
 - Python >= 3.9
-- (Optional) cobra-color >= 1.2.0
+- (Optional) cobra-color >= 1.3.0
 
 ## License
 
