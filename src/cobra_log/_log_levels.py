@@ -5,9 +5,14 @@
 from __future__ import annotations
 import sys
 import inspect
-from typing import (Any, Optional, Union)
+from typing import (Any, Optional, Union, Literal)
 
 from . import _core
+from ._exceptions import (
+    CriticalErrorException,
+    ErrorException,
+    WarningException
+)
 from ._utils import (trace_exc, trace_stack, box_lines, _fmt_msg)
 
 
@@ -64,9 +69,16 @@ def _fmt_exc(exc: Any, /, top_indent: int, frame_style: str, indent: int = 0, **
     return exc_msg, exc
 
 
-def critical(msg: str = "", /, exc: Optional[Any] = None, throw: Optional[Exception] = None, loc: Union[bool, int] = True):
+def critical(
+    msg: str = "",
+    /,
+    exc: Optional[Any] = None,
+    throw: Union[Optional[Exception], Literal["fatal"]] = "fatal",
+    loc: Union[bool, int] = True,
+    display: bool = True
+):
     r"""
-    `CRITICAL` exception with `log` record (requires :func:`log_init`). Raises a `Exception` exception after logging.
+    `CRITICAL-ERROR` or `FATAL-ERROR` level with `log` record (requires :func:`log_init`).
 
     NOTE: Used when the overall program is not running.
 
@@ -81,36 +93,61 @@ def critical(msg: str = "", /, exc: Optional[Any] = None, throw: Optional[Except
             - `None`: Try to catch the exception in the current context. If no exception is caught, no exception information will be recorded;
             - `""`: No exception information will be recorded.
 
-        throw : Optional[Exception], default to `None`
-            Control whether to throw exception after logging.
-            - `None`: Throw a :class:`Exception` exception with the formatted message;
-            - _Exception_: Throw the specified exception with the description message;
+        throw : Union[Optional[Exception], Literal["fatal"]], default to `"fatal"`
+            The type of exception to be output after logging, use `raise` to throw the exception.
+            - `"fatal"`: Return a :class:`SystemExit` exception with the formatted message, which will cause the program to `exit` immediately;
+            - _Exception_: Return the specified exception with the description message;
+            - `None`: Return :class:`CriticalErrorException` exception with the description message.
 
-        loc : bool, default to `True`
+        loc : Union[bool, int], default to `True`
             Control whether to display file function location information.
             - `True`: Display `CRITICAL` location as stack level `1`;
             - _int_: Display `CRITICAL` location according to stack level. i.e.: `0`: the location where the `CRITICAL` is called; `1`: the location of the parent function that calls the `CRITICAL`.; ...
 
-    Raises
-    ------
-        `Exception`
+        display : bool, default to `True`
+            Control whether to display the formatted message.
+
+    Returns
+    -------
+        SystemExit
+            :param:`throw` is `"fatal"`.
+        Exception
+            :param:`throw` is an Exception class.
+        CriticalErrorException
+            :param:`throw` is `None`.
     """
     # main message
-    main_msg, _msg = _fmt_main("CRITICAL-ERROR", msg, loc=loc, fg="w", bg="lr", styles={"bold"})
+    prefix = "{FATAL-ERROR}" if throw == "fatal" else "CRITICAL-ERROR"
+    main_msg, _msg = _fmt_main(prefix, msg, loc=loc, fg="w", bg="lr", styles={"bold"})
     # exception message
     exc_msg, exc = _fmt_exc(exc, top_indent=len(main_msg), frame_style="double", fg="lr", styles={"bold", "blink"})
     # log
     if _core._FILE_HANDLER:
         _core._LOGGER.critical(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
     # combine
-    final_msg = _core.cstr("\n", main_msg, " " * _FRAME_GAP, exc_msg)
+        final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
+    # display
+    if display:
+        _core.display(final_msg)
     # throw
-    raise Exception(final_msg) if throw is None else throw(_msg)
+    if throw == "fatal":
+        return SystemExit(final_msg)
+    elif inspect.isclass(throw) and issubclass(throw, Exception):
+        return throw(_msg)
+    else:
+        return CriticalErrorException(_msg)
 
 
-def error(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Exception] = False, loc: Union[bool, int] = True, display: bool = True):
+def error(
+    msg: str = "",
+    /,
+    exc: Optional[Any] = None,
+    throw: Optional[Exception] = None,
+    loc: Union[bool, int] = True,
+    display: bool = True
+):
     r"""
-    `ERROR` exception with `log` record (requires :func:`log_init`).
+    `ERROR` level with `log` record (requires :func:`log_init`).
 
     NOTE: Used when some functions are not running.
 
@@ -125,13 +162,12 @@ def error(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Except
             - `None`: Try to catch the exception in the current context. If no exception is caught, no exception information will be recorded;
             - `""`: No exception information will be recorded.
 
-        throw : Union[bool, Exception], default to `False`
-            Control whether to throw exception with the description message after logging.
-            - `True`: Throw :class:`Exception` exception if no exception is caught, otherwise throw the caught exception;
-            - _Exception_: Throw the specified exception;
-            - `False`: No exception will be thrown.
+        throw : Optional[Exception], default to `None`
+            The type of exception to be output after logging.
+            - _Exception_: Return the specified exception with the description message;
+            - `None`: Return :class:`ErrorException` exception with the description message.
 
-        loc : bool, default to `True`
+        loc : Union[bool, int], default to `True`
             Control whether to display file function location information.
             - `True`: Display `ERROR` location as stack level `1`;
             - _int_: Display `ERROR` location according to stack level. i.e.: `0`: the location where the `ERROR` is called; `1`: the location of the parent function that calls the `ERROR`.; ...
@@ -141,12 +177,10 @@ def error(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Except
 
     Returns
     -------
-        str
-            Formatted message.
-
-    Raises
-    ------
-        `Exception`: When When an exception is caught.
+        Exception
+            :param:`throw` is an Exception class.
+        ErrorException
+            :param:`throw` is `None`.
     """
     # main message
     main_msg, _msg = _fmt_main("ERROR", msg, loc=loc, fg="d", bg="y", styles={"bold"})
@@ -155,23 +189,29 @@ def error(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Except
     # log
     if _core._FILE_HANDLER:
         _core._LOGGER.error(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
-    # combine
-    final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
     # display
     if display:
+        # combine
+        final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
         _core.display(final_msg)
     # throw
-    if throw is True:
-        raise Exception(_msg) if exc is None else exc
-    elif inspect.isclass(throw) and issubclass(throw, Exception):
-        raise throw(_msg)
-
-    return final_msg
+    if inspect.isclass(throw) and issubclass(throw, Exception):
+        return throw(_msg)
+    else:
+        return ErrorException(_msg)
 
 
-def warning(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Exception] = False, loc: Union[bool, int] = True, dim: bool = False, display: bool = True):
+def warning(
+    msg: str = "",
+    /,
+    exc: Optional[Any] = None,
+    throw: Optional[Exception] = None,
+    loc: Union[bool, int] = True,
+    dim: bool = False,
+    display: bool = True
+):
     r"""
-    `WARNING` exception with `log` record (requires :func:`log_init`).
+    `WARNING` level with `log` record (requires :func:`log_init`).
 
     NOTE: Used when unexpected events occur, and the program can still run normally.
 
@@ -186,11 +226,10 @@ def warning(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Exce
             - `None`: Try to catch the exception in the current context. If no exception is caught, no exception information will be recorded;
             - `""`: No exception information will be recorded.
 
-        throw : Union[bool, Exception], default to `False`
-            Control whether to throw exception with the description message after logging.
-            - `True`: Throw :class:`Exception` exception if no exception is caught, otherwise throw the caught exception;
-            - _Exception_: Throw the specified exception;
-            - `False`: No exception will be thrown.
+        throw : Optional[Exception], default to `None`
+            The type of exception to be output after logging.
+            - _Exception_: Return the specified exception with the description message;
+            - `None`: Return :class:`WarningException` exception with the description message.
 
         loc : bool, default to `True`
             Control whether to display file function location information.
@@ -205,12 +244,10 @@ def warning(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Exce
 
     Returns
     -------
-        str
-            Formatted message.
-
-    Raises
-    ------
-        `Exception`: When When an exception is caught.
+        Exception
+            :param:`throw` is an Exception class.
+        WarningException
+            :param:`throw` is `None`.
     """
     # main message
     main_msg, _msg = _fmt_main("WARNING", msg, loc=loc, fg="y", styles=None if dim else {"bold"})
@@ -219,23 +256,29 @@ def warning(msg: str = "", /, exc: Optional[Any] = None, throw: Union[bool, Exce
     # log
     if _core._FILE_HANDLER:
         _core._LOGGER.warning(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
-    # combine
-    final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
     # display
     if display:
+        # combine
+        final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
         _core.display(final_msg)
     # throw
-    if throw is True:
-        raise Exception(_msg) if exc is None else exc
-    elif inspect.isclass(throw) and issubclass(throw, Exception):
-        raise throw(_msg)
-
-    return final_msg
+    if inspect.isclass(throw) and issubclass(throw, Exception):
+        return throw(_msg)
+    else:
+        return WarningException(_msg)
 
 
-def info(msg: str = "", /, exc: Optional[Any] = "", indent: int = 0, loc: Union[bool, int] = False, outline: bool = False, display: bool = True):
+def info(
+    msg: str = "",
+    /,
+    exc: Optional[Any] = "",
+    indent: int = 0,
+    loc: Union[bool, int] = False,
+    outline: bool = False,
+    display: bool = True
+):
     r"""
-    `INFO` exception with `log` record (requires :func:`log_init`).
+    `INFO` level with `log` record (requires :func:`log_init`).
 
     NOTE: Used to record key node information.
 
@@ -290,7 +333,7 @@ def info(msg: str = "", /, exc: Optional[Any] = "", indent: int = 0, loc: Union[
 
 def debug(*args: Any, **kwargs: Any):
     r"""
-    `DEBUG` exception with `log` record (requires :func:`log_init`).
+    `DEBUG` level with `log` record (requires :func:`log_init`).
 
     NOTE: Used for debugging.
     """

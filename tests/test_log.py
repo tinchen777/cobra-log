@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, "/data/tianzhen/my_packages/cobra-log/src")
 
-from cobra_log import (warning, info, error, log_init, set_trace)
+from cobra_log import (warning, info, error, log_init, set_trace, critical)
 
 
 def test_cobra_log():
@@ -14,12 +14,14 @@ def test_cobra_log():
             try:
                 raise KeyError("This is the second exception")
             except Exception:
-                error("An error occurred during the test.", throw=True)
+                # error("An error occurred during the test.", throw=True)
+                raise critical("A critical error occurred during the test1.", throw=None)
 
     except Exception:
         warning("An error occurred during the test.")
         info("Continuing execution after warning.")
         error("An error occurred during the test.", "")
+        # critical("A critical error occurred during the test.")
 
 
 def test_cobra_log_2():
@@ -30,23 +32,19 @@ def test_cobra_log_2():
         warning("An error occurred during the test.", e, loc=True)
         info("Continuing execution after warning.")
         info("Continuing execution after warning.", e, outline=True)
-
+        critical("A critical error occurred during the test.")
 
 def test_cobra_log_3():
-    
     try:
         try:
-            1 / 0
-        except Exception as e1:
-            raise ValueError("outer error")
-    except Exception as e:
-        
-        print(e.__cause__)
-        print(e.__context__)
-        print(e.__suppress_context__)
-        
-        # raise
-        error("An error occurred")
+            try:
+                1 / 0
+            except Exception as e:
+                raise error("An error occurred during the test31.", throw=None) from e
+        except Exception as ee:
+            raise error("An error occurred during the test32.", throw=TimeoutError) from ee
+    except Exception:
+        critical("A critical error occurred during the test33.", throw=None)
 
 
 def test_cobra_log_4():
@@ -68,7 +66,6 @@ def test_cobra_log_4():
         error("An error occurred")
 
 
-
 if __name__ == "__main__":
     log_init("test_log.log", log_level="debug", use_color=True)
     set_trace(with_border=True, exc_depth=3, tb_depth=3, exc_args_limit=3, min_width=1)
@@ -77,4 +74,5 @@ if __name__ == "__main__":
     test_cobra_log_2()
     print("\n" + "=" * 80 + "\n")
     test_cobra_log_3()
+    print("\n" + "=" * 80 + "\n")
     test_cobra_log_4()

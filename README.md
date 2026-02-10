@@ -54,13 +54,14 @@ log_init("log_save_path.log", use_color=True)
 
 try:
     try:
-        1 / 0  # This will raise a ZeroDivisionError
-    except Exception as e1:
-        raise RuntimeError("This is the main exception")
+        try:
+            1 / 0
+        except Exception as e:
+            raise error("An error occurred during the test.", throw=None) from e
+    except Exception as ee:
+        raise error("An error(TimeoutError) occurred during the test.", throw=TimeoutError) from ee
 except Exception:
-    warning("A warning occurred.")
-    info("Continuing execution after warning.")
-    error("An error message", throw=True)
+    critical("A critical error occurred during the test.", throw=None)
 ```
 
 ## Requirements

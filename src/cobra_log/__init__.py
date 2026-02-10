@@ -28,13 +28,17 @@ log_init("log_save_path.log", use_color=True)
 
 try:
     try:
-        1 / 0  # This will raise a ZeroDivisionError
-    except Exception as e1:
-        raise RuntimeError("This is the main exception") from e1
+        try:
+            1 / 0
+        except Exception as e:
+            raise error("An error occurred.", throw=None) from e
+    except Exception as ee:
+        raise error(
+            "An error(TimeoutError) occurred.",
+            throw=TimeoutError
+        ) from ee
 except Exception:
-    warning("A warning occurred.")
-    info("Continuing execution after warning.")
-    error("An error message", throw=True)
+    critical("A critical error occurred.", throw=None)
 ```
 """
 
@@ -44,7 +48,7 @@ from ._utils import trace_stack
 
 
 __author__ = "Zhen Tian"
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 __all__ = [
     "log_init",

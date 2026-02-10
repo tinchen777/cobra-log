@@ -8,8 +8,11 @@ from cobra_log._utils import trace_stack, box_lines, trace_exc
 from cobra_color import cstr
 import cobra_log
 import logging
-
+import warnings
 import os
+
+
+warnings.warn()
 
 # use_color(False)
 log_init("test_log.log", log_level="debug", use_color=True)
