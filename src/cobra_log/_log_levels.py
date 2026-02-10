@@ -125,7 +125,7 @@ def critical(
     if _core._FILE_HANDLER:
         _core._LOGGER.critical(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
     # combine
-        final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
+    final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
     # display
     if display:
         _core.display(final_msg)
