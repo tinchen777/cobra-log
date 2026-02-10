@@ -5,7 +5,7 @@
 import inspect
 import os
 import traceback
-from typing import (Any, Tuple, List, Optional, Union, Sequence)
+from typing import (Any, Tuple, List, Optional, Sequence, Literal)
 
 from ._core import cstr, _TRACE_CONFIG
 
@@ -17,6 +17,7 @@ _FINAL_STYLES = {"bold", "selected"}
 
 _TB_STR = "traceback"
 _EXC_ARROW_STR = cstr("\u25B6 ", styles={"bold"})
+_CAUSE_LINE = {"vertical": "\u2502", "horizontal": "\u2500", "corner": "\u2514"}
 # traceback braces
 _BRACE = {"upper": "\u250E", "middle": "\u2520", "lower": "\u2516"}
 _SHORT_LINE = "\u2574"
@@ -160,6 +161,7 @@ def trace_stack(stack_level: int = 1, /, fmt: str = _TRACE_FMT) -> str:
 def trace_exc(
     exception: Any,
     /,
+    mode: Literal["cause", "context"] = "context",
     exc_depth: int = -1,
     tb_depth: Optional[int] = -1,
     exc_args_limit: int = -1,
@@ -173,13 +175,18 @@ def trace_exc(
         exception : Any
             The exception instance to trace.
 
+        mode : Literal["cause", "context"], default to `"context"`
+            The trace mode for exception chain.
+            - `"cause"`: Trace the cause exception chain, i.e., the exceptions linked by `__cause__` attribute. This chain is formed when exceptions are raised with `from` keyword.
+            - `"context"`: Trace the context exception chain, i.e., the exceptions linked by `__context__` attribute. This chain is formed when an exception is raised in an except block and not handled, regardless of whether `from` keyword is used.
+
         exc_depth : int, default to `-1`
             The maximum depth of exception chain to trace.
             - `< 1`: Trace all exceptions in the chain;
             - `>= 1`: Trace the last :param:`exc_depth` exceptions in the chain, omitting earlier exceptions.
 
         tb_depth : Optional[int], default to `-1`
-            The maximum depth of traceback frames to trace for each exception.
+            The maximum depth of stack traceback frames to trace for each exception.
             - `None`: Without traceback frames;
             - `< 1`: Trace all traceback frames;
             - `>= 1`: Trace the last :param:`tb_depth` traceback frames, omitting earlier frames.
@@ -197,34 +204,94 @@ def trace_exc(
         str
             Formatted string.
     """
+    _base_indent = _add_indent(indent)
+
+    # === non-exception type ===
     if not isinstance(exception, Exception):
         # non-exception type
-        return _add_indent(indent) + _EXC_ARROW_STR +\
+        return _base_indent + _EXC_ARROW_STR +\
             cstr(_fmt_msg(exception), styles=_FINAL_STYLES)
-    # exception type
-    # build exception chain
-    exc_list: List[Union[Exception, int]] = []
-    exc = exception
-    while exc is not None:
-        exc_list.append(exc)
-        exc = exc.__cause__ or exc.__context__
-    if 0 < exc_depth < len(exc_list):
-        _e_omit_num = len(exc_list) - exc_depth
-        exc_list = exc_list[-exc_depth:]
-        exc_list.insert(0, cstr(f"... Omitted {_e_omit_num} Exception(s) ...", styles={"dim"}))
-    # format exception chain
+
+    # === exception type ===
     trace_lines: List[str] = []
-    for exc_idx, exc in enumerate(exc_list):
+    # 1. build exception chain
+    exc_lists: List[List[Any]] = [[]]
+    exc = exception
+    _exc_list = exc_lists[-1]
+    exc_count = 0
+    while exc is not None:
+        _exc_list.append((exc_count, exc))
+        exc_count += 1
+        # check next exception in chain
+        if exc.__cause__ is not None:
+            exc = exc.__cause__
+        else:
+            if mode == "cause":
+                # cause
+                break
+            else:
+                # context
+                exc_lists.append([])
+                _exc_list = exc_lists[-1]
+                exc = exc.__context__
+
+    if mode == "cause":
+        trace_lines.extend([
+            _base_indent,
+            cstr("    for cause exception(s) only", styles={"dim"})
+        ])
+    if 0 < exc_depth < exc_count:
+        _e_omit_num = _rest_omit_num = exc_count - exc_depth
+        while _rest_omit_num > 0:
+            if _rest_omit_num >= len(exc_lists[0]):
+                _rest_omit_num -= len(exc_lists[0])
+                exc_lists.pop(0)
+            else:
+                exc_lists[0] = exc_lists[0][_rest_omit_num:]
+                _rest_omit_num = 0
+        trace_lines.extend([
+            _base_indent,
+            cstr(f"... omitted {_e_omit_num} exception(s) ...", styles={"dim"})
+        ])
+    # 2. format exception chain
+    for _exc_list in exc_lists:
+        trace_lines.extend(_compile_trace(
+            _exc_list,
+            total_exc=exc_count,
+            tb_depth=tb_depth,
+            exc_args_limit=exc_args_limit,
+            indent=indent
+        ))
+
+    return cstr(*trace_lines)
+
+
+def _compile_trace(
+    exc_cause_list: List[Tuple[int, Exception]],
+    /,
+    total_exc: int,
+    tb_depth: Optional[int],
+    exc_args_limit: int,
+    indent: int
+):
+    r"""Compile the exception chain into trace lines."""
+    trace_lines: List[str] = []
+    for idx, (exc_idx, exc) in enumerate(exc_cause_list):
         # for exception chain
         _base_indent = _add_indent(indent)
-        if isinstance(exc, str):
-            # omitted exceptions
-            trace_lines.extend([_base_indent, exc])
-            continue
+        is_final = exc_idx == total_exc - 1
         # actual exception
-        indent_arrow = cstr(_base_indent, f"({len(exc_list)-exc_idx})", _EXC_ARROW_STR)
+        if len(exc_cause_list) > 1 and idx > 0:
+            # non-first exception in chain with multiple exceptions
+            indent_arrow = cstr(
+                _add_indent(indent-3),
+                _CAUSE_LINE["corner"] + "<" + _CAUSE_LINE["horizontal"],
+                f"({total_exc - exc_idx})",
+                _EXC_ARROW_STR
+            )
+        else:
+            indent_arrow = cstr(_base_indent, f"({total_exc - exc_idx})", _EXC_ARROW_STR)
         trace_lines.append(indent_arrow)
-        is_final = exc_idx == len(exc_list) - 1
         # exception name
         exc_name = cstr(
             exc.__class__.__name__,
@@ -232,8 +299,12 @@ def trace_exc(
             bg="lr" if is_final else None,
             styles={"dim"} if is_final else {"bold"}
         )
-        # traceback
-        _tb_indent = _add_indent(len(indent_arrow) - 1)
+        # 3. stack traceback
+        if len(exc_cause_list) > 1 and idx < len(exc_cause_list) - 1:
+            # non-final exception in chain with multiple exceptions
+            _tb_indent = cstr(_base_indent, f" {_CAUSE_LINE['vertical']}   ")
+        else:
+            _tb_indent = _add_indent(len(indent_arrow) - 1)
         tb_stack = list(traceback.extract_tb(exc.__traceback__))
         if not tb_depth or len(tb_stack) == 1:
             # only one traceback frame
@@ -244,7 +315,7 @@ def trace_exc(
                 _tb_omit_num = len(tb_stack) - tb_depth
                 tb_stack = tb_stack[-tb_depth:]
                 _tb_len = len(tb_stack)
-                tb_stack.insert(0, cstr(f"... Omitted {_tb_omit_num} Traceback Frame(s) ...", styles={"dim"}))
+                tb_stack.insert(0, cstr(f"... omitted {_tb_omit_num} traceback frame(s) ...", styles={"dim"}))
             _tb_len = len(tb_stack)
             tb_idx_width = len(str(_tb_len))
             _name_width = max(len(_TB_STR) + tb_idx_width + 1, len(exc_name))
@@ -261,16 +332,15 @@ def trace_exc(
                 tb_prefix = _BRACE["lower"] if len(tb_stack) > 1 else ""
                 _tb_name = exc_name
                 _tb_styles = _FINAL_STYLES if is_final else set()
-                # exception args
+                # 4. exception args
                 _e_args = _fmt_exc_args(exc.args, is_final)
                 if 0 < exc_args_limit < len(_e_args):
                     _arg_omit_num = len(_e_args) - exc_args_limit
                     _e_args = _e_args[:exc_args_limit]
                     _e_args.append(
-                        cstr(f" ... Omitted {_arg_omit_num} Argument(s) ...", styles={"dim"})
+                        cstr(f" ... omitted {_arg_omit_num} argument(s) ...", styles={"dim"})
                     )
-                _e_args_indent = _add_indent(
-                    len(_tb_indent) + _name_width + len(_tb_detail) + len(tb_prefix) + 4)
+                _e_args_space = _add_indent(_name_width + len(_tb_detail) + len(tb_prefix) + 5, nowrap=True)
                 arg_lines = []
                 for e_arg_idx, e_arg in enumerate(_e_args):
                     # for each exception argument
@@ -281,7 +351,7 @@ def trace_exc(
                     else:
                         # non-first exception argument
                         _prefix = _BRACE["lower"] if e_arg_idx == len(_e_args) - 1 else _BRACE["middle"]
-                        arg_lines.extend([_e_args_indent, _prefix, e_arg])
+                        arg_lines.extend([_tb_indent, _e_args_space, _prefix, e_arg])
             else:
                 # non-final traceback
                 tb_prefix = _BRACE["upper"] if tb_idx == 0 else _BRACE["middle"]
@@ -297,12 +367,12 @@ def trace_exc(
             # traceback head
             tb_head = cstr("<", _tb_name.center(_name_width), ": ", _tb_detail,
                            ">", styles=[(None, {"italic", *_tb_styles})])
-            # assemble
+            # 5. assemble
             trace_lines.extend([tb_indent, tb_prefix, tb_head, *arg_lines])
         # update
         indent += 4
 
-    return cstr(*trace_lines)
+    return trace_lines
 
 
 def _fmt_msg(msg: Any, /, limit: Optional[int] = None) -> str:
@@ -315,9 +385,9 @@ def _fmt_msg(msg: Any, /, limit: Optional[int] = None) -> str:
     return msg
 
 
-def _add_indent(indent: int, /) -> str:
+def _add_indent(indent: int, /, nowrap: bool = False) -> str:
     r"""Create indentation."""
-    return cstr("\n" + " " * indent, styles={"disappear"})
+    return cstr(("" if nowrap else "\n") + " " * indent, styles={"disappear"})
 
 
 def _fmt_exc_args(e_args: Tuple[Any, ...], /, is_final: bool, is_top=True) -> List[str]:

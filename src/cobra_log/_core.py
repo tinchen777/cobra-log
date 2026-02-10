@@ -57,6 +57,7 @@ def enable_color(flag: bool = True, /):
 # trace display
 _TRACE_CONFIG = {
     "with_border": True,
+    "exc_mode": "context",
     "exc_depth": -1,
     "tb_depth": -1,
     "exc_args_limit": -1,
@@ -73,6 +74,7 @@ def set_trace(**kwargs: Any):
         **kwargs : Any
             The trace display configuration to be updated. Including:
             - `with_border`: bool
+            - `exc_mode`: Literal["cause", "context"]
             - `exc_depth`: int
             - `tb_depth`: Optional[int]
             - `exc_args_limit`: int

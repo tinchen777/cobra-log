@@ -45,6 +45,7 @@ def _fmt_exc(exc: Any, /, top_indent: int, frame_style: str, indent: int = 0, **
     # exception message
     exc_msg = trace_exc(
         exc,
+        mode=_core._TRACE_CONFIG.get("exc_mode", "context"),
         exc_depth=_core._TRACE_CONFIG.get("exc_depth", -1),
         tb_depth=_core._TRACE_CONFIG.get("tb_depth", -1),
         exc_args_limit=_core._TRACE_CONFIG.get("exc_args_limit", -1),

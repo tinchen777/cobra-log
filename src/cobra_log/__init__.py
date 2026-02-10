@@ -30,7 +30,7 @@ try:
     try:
         1 / 0  # This will raise a ZeroDivisionError
     except Exception as e1:
-        raise RuntimeError("This is the main exception")
+        raise RuntimeError("This is the main exception") from e1
 except Exception:
     warning("A warning occurred.")
     info("Continuing execution after warning.")

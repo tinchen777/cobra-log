@@ -14,7 +14,7 @@ import os
 # use_color(False)
 log_init("test_log.log", log_level="debug", use_color=True)
 
-set_trace(min_width=1)
+set_trace(min_width=1, exc_mode="cause", exc_depth=4, tb_depth=2, exc_args_limit=2, with_border=True)
 
 def a():
     s = ZeroDivisionError("123")
@@ -28,7 +28,7 @@ def b():
 
 def c():
     b()
-# FIXME
+
 
 class CriticalException(Exception):
     r"""
@@ -56,9 +56,12 @@ def test_cobra_log():
             # dataset.targets not defined
             try:
                 # try multi_targets in original_samples_arr
-                assert 1 == 0, ("Dataset Has No Attribute [samples]", e3, e3)
+                raise KeyError("Dataset Has No Attribute [samples]") from e3
+                
+                
+                # assert 1 == 0, ("Dataset Has No Attribute [samples]", e3, e3)
             except Exception as e4:
-                raise ValueError(e4, "Try To Create From [dataset.samples] Error", e4, e4, "dada")
+                raise ValueError(e4, "Try To Create From [dataset.samples] Error", e4, e4, "dada") from e4
         
         # except Exception as e2:
             
@@ -75,10 +78,16 @@ try:
     try:
         test_cobra_log()
     except Exception as e:
+        
+        # a = trace_exc(e, mode="caue")
+        
+        # print(a)
+        # raise
 
         warning("This is a warn message", throw=TypeError)
 
 except Exception as ss:
+    # raise
     error("This is a error message2", ss)
     
     
@@ -102,3 +111,5 @@ except Exception as ss:
 
     # info("This is an info message", e, indent=8, outline=False)
 
+print("\u2191")
+print("\u2190\u2190\u2190")
