@@ -48,7 +48,7 @@ from ._utils import trace_stack
 
 
 __author__ = "Zhen Tian"
-__version__ = "1.3.0"
+__version__ = "1.2.0"
 
 __all__ = [
     "log_init",
