@@ -5,9 +5,13 @@ cobra-log
 
 A lightweight and easy-to-use logging library for Python.
 
+Modules
+-------
+- :mod:`cobra_log.handlers`: Logger handlers.
 Functions
 ---------
-- :func:`log_init`: Initialize the logging system.
+- :func:`use_logger`: Activate a logger with the specified name and configuration.
+- :func:`add_handler`: Add a log handler to the specified logger.
 - :func:`enable_color`: Enable or disable colored output (need :pkg:`cobra-color`).
 - :func:`set_trace`: Configure global trace display settings.
 - :func:`critical`: Log a critical error message and raise an exception.
@@ -21,11 +25,12 @@ Examples
 --------
 
 ```python
-from cobra_log import (log_init, info, warning, error)
+from cobra_log import (use_logger, info, warning, error)
 
-# Initialize the log system
-log_init("log_save_path.log", use_color=True)
-
+# initialize and activate loggers
+use_logger("my_logger_1", "stdout")
+use_logger("my_logger_2", "log_save_path.log", "stdout")
+# use my_logger_2
 try:
     try:
         try:
@@ -39,19 +44,25 @@ try:
         ) from ee
 except Exception:
     critical("A critical error occurred.", throw=None)
+# activate my_logger_1
+use_logger("my_logger_1")
+# use my_logger_1
+warning("A warning occurred.")
+info("An info occurred.")
 ```
 """
 
-from ._core import (log_init, enable_color, set_trace)
+from ._core import (enable_color, set_trace, use_logger, add_handler)
 from ._log_levels import (critical, error, warning, info, debug)
 from ._utils import trace_stack
 
 
 __author__ = "Zhen Tian"
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 __all__ = [
-    "log_init",
+    "use_logger",
+    "add_handler",
     "enable_color",
     "set_trace",
     "critical",

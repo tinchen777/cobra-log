@@ -20,9 +20,9 @@ A lightweight and easy-to-use logging library for Python.
 
 ## Features
 
+- 🚀 Seamless integration with Python's native exception mechanism.
 - 🚀 Vivid and detailed terminal output (need `cobra-color`).
-- 🚀 Optional file persistence with rotation.
-- 🚀 Simple, dependency-light design.
+- 🚀 User-friendly log file management.
 
 ## Installation
 
@@ -37,9 +37,9 @@ pip install cobra-log
 - Simple warning
 
   ```python
-  from cobra_log import warning, log_init
+  from cobra_log import warning, use_logger
 
-  log_init("your_log_file.log")
+  use_logger("your_log_file.log")
 
   warning("warning message")
   ```
@@ -47,21 +47,30 @@ pip install cobra-log
 ## Example
 
 ```python
-from cobra_log import (log_init, info, warning, error)
+from cobra_log import (use_logger, info, warning, error)
 
-# Initialize the log system
-log_init("log_save_path.log", use_color=True)
-
+# initialize and activate loggers
+use_logger("my_logger_1", "stdout")
+use_logger("my_logger_2", "log_save_path.log", ("stdout", "error"))
+# use my_logger_2
 try:
     try:
         try:
             1 / 0
         except Exception as e:
-            raise error("An error occurred during the test.", throw=None) from e
+            raise error("An error occurred.", throw=None) from e
     except Exception as ee:
-        raise error("An error(TimeoutError) occurred during the test.", throw=TimeoutError) from ee
+        raise error(
+            "An error(TimeoutError) occurred.",
+            throw=TimeoutError
+        ) from ee
 except Exception:
-    critical("A critical error occurred during the test.", throw=None)
+    critical("A critical error occurred.", throw=None)
+# activate my_logger_1
+use_logger("my_logger_1")
+# use my_logger_1
+warning("A warning occurred.")
+info("An info occurred.")
 ```
 
 ## Requirements

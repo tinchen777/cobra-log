@@ -8,7 +8,7 @@ import inspect
 from typing import (Any, Optional, Union, Literal)
 
 from . import _core
-from ._exceptions import (
+from .exceptions import (
     CriticalErrorException,
     ErrorException,
     WarningException
@@ -122,8 +122,8 @@ def critical(
     # exception message
     exc_msg, exc = _fmt_exc(exc, top_indent=len(main_msg), frame_style="double", fg="lr", styles={"bold", "blink"})
     # log
-    if _core._FILE_HANDLER:
-        _core._LOGGER.critical(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
+    if _core._ACTIVATED_LOGGER.hasHandlers():
+        _core._ACTIVATED_LOGGER.critical(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
     # combine
     final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
     # display
@@ -187,8 +187,8 @@ def error(
     # exception message
     exc_msg, exc = _fmt_exc(exc, top_indent=len(main_msg), frame_style="double", fg="y", styles={"bold", "blink"})
     # log
-    if _core._FILE_HANDLER:
-        _core._LOGGER.error(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
+    if _core._ACTIVATED_LOGGER.hasHandlers():
+        _core._ACTIVATED_LOGGER.error(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
     # display
     if display:
         # combine
@@ -254,8 +254,8 @@ def warning(
     # exception message
     exc_msg, exc = _fmt_exc(exc, top_indent=len(main_msg), frame_style="light", fg="y", styles={"dim"} if dim else {"bold"})
     # log
-    if _core._FILE_HANDLER:
-        _core._LOGGER.warning(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
+    if _core._ACTIVATED_LOGGER.hasHandlers():
+        _core._ACTIVATED_LOGGER.warning(str(_msg), exc_info=exc, stack_info=True, stacklevel=2)
     # display
     if display:
         # combine
@@ -320,8 +320,8 @@ def info(
     # exception message
     exc_msg, exc = _fmt_exc(exc, top_indent=len(main_msg), indent=indent, frame_style="light", fg="lb" if outline else "g", styles={"bold"} if outline else None)
     # log
-    if _core._FILE_HANDLER:
-        _core._LOGGER.info(str(_msg), exc_info=exc, stack_info=False, stacklevel=2)
+    if _core._ACTIVATED_LOGGER.hasHandlers():
+        _core._ACTIVATED_LOGGER.info(str(_msg), exc_info=exc, stack_info=False, stacklevel=2)
     # combine
     final_msg = _core.cstr(main_msg, " " * _FRAME_GAP, exc_msg)
     # display
@@ -343,5 +343,5 @@ def debug(*args: Any, **kwargs: Any):
     for arg_name, arg_val in kwargs.items():
         msg += f"\n[{arg_name}]: {arg_val}"
     # log
-    if _core._FILE_HANDLER and msg:
-        _core._LOGGER.debug(msg, stack_info=True, stacklevel=2)
+    if _core._ACTIVATED_LOGGER.hasHandlers() and msg:
+        _core._ACTIVATED_LOGGER.debug(msg, stack_info=True, stacklevel=2)

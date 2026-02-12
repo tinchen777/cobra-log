@@ -1,9 +1,9 @@
-# tests/test_log.py
+# tests/test_exc.py
 
 import sys
 sys.path.insert(0, "/data/tianzhen/my_packages/cobra-log/src")
 
-from cobra_log import (warning, info, error, log_init, set_trace, critical)
+from cobra_log import (warning, info, error, use_logger, set_trace, critical)
 
 
 def test_cobra_log():
@@ -67,12 +67,15 @@ def test_cobra_log_4():
 
 
 if __name__ == "__main__":
-    log_init("test_log.log", log_level="debug", use_color=True)
     set_trace(with_border=True, exc_depth=3, tb_depth=3, exc_args_limit=3, min_width=1)
+    use_logger("my log 1", "test_log.log", level="debug")
     test_cobra_log()
     print("\n" + "=" * 80 + "\n")
+    use_logger("my log 2", "test_log.log", level="debug")
     test_cobra_log_2()
     print("\n" + "=" * 80 + "\n")
+    use_logger("my log 3", "test_log.log", level="debug")
     test_cobra_log_3()
     print("\n" + "=" * 80 + "\n")
+    use_logger("my log 4", "test_log.log", level="debug")
     test_cobra_log_4()
