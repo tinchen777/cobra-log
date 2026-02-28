@@ -7,19 +7,20 @@ A lightweight and easy-to-use logging library for Python.
 
 Modules
 -------
-- :mod:`cobra_log.handlers`: Logger handlers.
+- :mod:`cobra_log.handlers`: Log handlers for :pkg:`cobra_log` package.
 Functions
 ---------
-- :func:`use_logger`: Activate a logger with the specified name and configuration.
+- :func:`use_logger`: Activate a logger with the specified name, creating it if necessary, and add handlers to it.
 - :func:`add_handler`: Add a log handler to the specified logger.
 - :func:`enable_color`: Enable or disable colored output (need :pkg:`cobra-color`).
-- :func:`set_trace`: Configure global trace display settings.
 - :func:`critical`: Log a critical error message and raise an exception.
 - :func:`error`: Log an error message.
 - :func:`warning`: Log a warning message.
 - :func:`info`: Log an informational message.
 - :func:`debug`: Log a debug message.
-- :func:`trace_stack`: Trace the stack information of the function call.
+- :func:`box_lines`: Box the given lines of text with a border.
+- :func:`get_log_level`: Get the logging level value from the logging level name.
+- :func:`find_handler`: Find a handler with the specified name in the logger.
 
 Examples
 --------
@@ -28,7 +29,7 @@ Examples
 from cobra_log import (use_logger, info, warning, error)
 
 # initialize and activate loggers
-use_logger("my_logger_1", "stdout")
+use_logger("my_logger_1", "stdout", "console")
 use_logger("my_logger_2", "log_save_path.log", "stdout")
 # use my_logger_2
 try:
@@ -52,23 +53,25 @@ info("An info occurred.")
 ```
 """
 
-from ._core import (enable_color, set_trace, use_logger, add_handler)
+from ._core import (use_logger, add_handler)
+from ._display import enable_color
 from ._log_levels import (critical, error, warning, info, debug)
-from ._utils import trace_stack
+from ._utils import (box_lines, get_log_level, find_handler)
 
 
 __author__ = "Zhen Tian"
-__version__ = "1.3.0"
+__version__ = "2.0.0"
 
 __all__ = [
     "use_logger",
     "add_handler",
     "enable_color",
-    "set_trace",
     "critical",
     "error",
     "warning",
     "info",
     "debug",
-    "trace_stack"
+    "box_lines",
+    "get_log_level",
+    "find_handler"
 ]

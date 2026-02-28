@@ -2,25 +2,12 @@
 # Python version: 3.9
 # @TianZhen
 
-import inspect
-import os
-import traceback
-from typing import (Any, Tuple, List, Optional, Sequence, Literal)
+import logging
+from typing import (Any, List, Sequence)
 
-from ._core import cstr, _TRACE_CONFIG
+from ._display import cstr
+from .types import T_LogLevelName
 
-
-_TRACE_FMT = r"%(fileName)s->%(funcName)s(%(lineno)d)"
-
-_END_SYMBOLS = (".", "!", "?", "。", "！", "？")
-_FINAL_STYLES = {"bold", "selected"}
-
-_TB_STR = "traceback"
-_EXC_ARROW_STR = cstr("\u25B6 ", styles={"bold"})
-_CAUSE_LINE = {"vertical": "\u2502", "horizontal": "\u2500", "corner": "\u2514"}
-# traceback braces
-_BRACE = {"upper": "\u250E", "middle": "\u2520", "lower": "\u2516"}
-_SHORT_LINE = "\u2574"
 
 _FRAME = {
     "light": {
@@ -50,8 +37,16 @@ _FRAME = {
 }
 
 
-def box_lines(lines: Sequence[str], /, top_indent: int = 0, rest_indent: int = 0, frame_style: str = "light", **pattern: Any) -> str:
-    r"""
+def box_lines(
+    lines: Sequence[str],
+    /,
+    top_indent: int = 0,
+    rest_indent: int = 0,
+    frame_style: str = "light",
+    min_width: int = 50,
+    **pattern: Any
+) -> str:
+    """
     Box the lines with a border.
 
     Parameters
@@ -68,6 +63,9 @@ def box_lines(lines: Sequence[str], /, top_indent: int = 0, rest_indent: int = 0
         frame_style : str, default to `"light"`
             The border style name of :attr:`_FRAME`, including `"light"`, `"double"` and `"heavy"`.
 
+        min_width : int, default to `50`
+            The minimum width of the boxed lines, excluding the border and the rest lines indent.
+
         **pattern : Any
             The color pattern for the border, including `fg`, `bg` and `styles`.
             See also :func:`cobra_color.cstr` for details.
@@ -77,16 +75,16 @@ def box_lines(lines: Sequence[str], /, top_indent: int = 0, rest_indent: int = 0
         str
             The boxed lines as a string.
     """
-    frame = _FRAME[frame_style]
+    frame = _FRAME.get(frame_style, _FRAME["light"])
     rest_indent = max(0, rest_indent)
+    top_indent = max(0, top_indent)
     # width
     width = max(len(line) for line in lines) + 1
     if width == 1:
         return ""
-    width = max(_TRACE_CONFIG.get("min_width", 50), width)
+    width = max((min_width), width, top_indent)
     # top line
     top_line_items: List[str] = []
-    top_indent = max(0, top_indent)
     if top_indent == 0:
         top_line_items.append(frame["top_left"])
     top_remain_len = width + rest_indent + 1 - top_indent
@@ -110,307 +108,53 @@ def box_lines(lines: Sequence[str], /, top_indent: int = 0, rest_indent: int = 0
     return cstr(*boxed_lines, sep="\n")
 
 
-def trace_stack(stack_level: int = 1, /, fmt: str = _TRACE_FMT) -> str:
-    r"""
-    Trace the stack information of the function call.
+def get_log_level(level_name: T_LogLevelName, /):
+    """
+    Get the logging level value from the logging level name.
 
     Parameters
     ----------
-        stack_level : int, default to `1`
-            The stack level of the function call.
-            - `0`: this function;
-            - `1`: the caller of this function;
-            - ...
-
-        fmt : str, default to TRACE_FMT
-            The format string, :attr:`_TRACE_FMT` is defined as `r"%(fileName)s->%(funcName)s(%(lineno)d)"`.
-            Includes:
-            - `%(stackDepth)d`: stack depth;
-            - `%(funcName)s`: function name;
-            - `%(filePath)s`: file path;
-            - `%(fileName)s`: file name;
-            - `%(lineno)d`: line number;
-            - `%(funcLineno)d`: function start line number.
+        level_name : T_LogLevelName
+            The logging level name.
 
     Returns
     -------
-        str
-            Formatted stack information.
+        int
+            The logging level value.
     """
-    total_stack = inspect.stack()
-    stack_level = min(max(0, stack_level), len(total_stack) - 1)
-    frame_info = total_stack[stack_level][0]
-    # format
-    args = {}
-    if r"%(stackDepth)d" in fmt:  # current stack depth
-        args["stackDepth"] = len(total_stack) - stack_level
-    if r"%(funcName)s" in fmt:  # current function name
-        args["funcName"] = frame_info.f_code.co_name
-    if r"%(filePath)s" in fmt:  # current file path
-        args["filePath"] = frame_info.f_code.co_filename
-    if r"%(fileName)s" in fmt:  # current file name
-        args["fileName"] = os.path.basename(frame_info.f_code.co_filename)
-    if r"%(lineno)d" in fmt:  # current line number
-        args["lineno"] = int(frame_info.f_lineno)
-    if r"%(funcLineno)d" in fmt:  # function start line number
-        args["funcLineno"] = frame_info.f_code.co_firstlineno
-
-    return fmt % args
+    level_name = str(level_name).upper()
+    return logging._nameToLevel.get(level_name, logging.NOTSET)
 
 
-def trace_exc(
-    exception: Any,
+def find_handler(
+    logger: logging.Logger,
+    handler_name: str,
     /,
-    mode: Literal["cause", "context"] = "context",
-    exc_depth: int = -1,
-    tb_depth: Optional[int] = -1,
-    exc_args_limit: int = -1,
-    indent: int = 4
-) -> str:
-    r"""
-    Trace the exception chain and format it as a string.
-
-    Parameters
-    ----------
-        exception : Any
-            The exception instance to trace.
-
-        mode : Literal["cause", "context"], default to `"context"`
-            The trace mode for exception chain.
-            - `"cause"`: Trace the cause exception chain, i.e., the exceptions linked by `__cause__` attribute. This chain is formed when exceptions are raised with `from` keyword.
-            - `"context"`: Trace the context exception chain, i.e., the exceptions linked by `__context__` attribute. This chain is formed when an exception is raised in an except block and not handled, regardless of whether `from` keyword is used.
-
-        exc_depth : int, default to `-1`
-            The maximum depth of exception chain to trace.
-            - `< 1`: Trace all exceptions in the chain;
-            - `>= 1`: Trace the last :param:`exc_depth` exceptions in the chain, omitting earlier exceptions.
-
-        tb_depth : Optional[int], default to `-1`
-            The maximum depth of stack traceback frames to trace for each exception.
-            - `None`: Without traceback frames;
-            - `< 1`: Trace all traceback frames;
-            - `>= 1`: Trace the last :param:`tb_depth` traceback frames, omitting earlier frames.
-
-        exc_args_limit : int, default to `-1`
-            The maximum number of exception arguments to display for each exception.
-            - `< 1`: Display all exception arguments;
-            - `>= 1`: Display the first :param:`exc_args_limit` exception arguments, omitting later arguments.
-
-        indent : int, default to `4`
-            The number of spaces to indent for each level of exception in the chain.
-
-    Returns
-    -------
-        str
-            Formatted string.
-    """
-    _base_indent = _add_indent(indent)
-
-    # === non-exception type ===
-    if not isinstance(exception, Exception):
-        # non-exception type
-        return _base_indent + _EXC_ARROW_STR +\
-            cstr(_fmt_msg(exception), styles=_FINAL_STYLES)
-
-    # === exception type ===
-    trace_lines: List[str] = []
-    # 1. build exception chain
-    exc_lists: List[List[Any]] = [[]]
-    exc = exception
-    _exc_list = exc_lists[-1]
-    exc_count = 0
-    while exc is not None:
-        _exc_list.append((exc_count, exc))
-        exc_count += 1
-        # check next exception in chain
-        if exc.__cause__ is not None:
-            exc = exc.__cause__
-        else:
-            if mode == "cause":
-                # cause
-                break
-            else:
-                # context
-                exc_lists.append([])
-                _exc_list = exc_lists[-1]
-                exc = exc.__context__
-
-    if mode == "cause":
-        trace_lines.extend([
-            _base_indent,
-            cstr("    for cause exception(s) only", styles={"dim"})
-        ])
-    if 0 < exc_depth < exc_count:
-        _e_omit_num = _rest_omit_num = exc_count - exc_depth
-        while _rest_omit_num > 0:
-            if _rest_omit_num >= len(exc_lists[0]):
-                _rest_omit_num -= len(exc_lists[0])
-                exc_lists.pop(0)
-            else:
-                exc_lists[0] = exc_lists[0][_rest_omit_num:]
-                _rest_omit_num = 0
-        trace_lines.extend([
-            _base_indent,
-            cstr(f"... omitted {_e_omit_num} exception(s) ...", styles={"dim"})
-        ])
-    # 2. format exception chain
-    for _exc_list in exc_lists:
-        trace_lines.extend(_compile_trace(
-            _exc_list,
-            total_exc=exc_count,
-            tb_depth=tb_depth,
-            exc_args_limit=exc_args_limit,
-            indent=indent
-        ))
-
-    return cstr(*trace_lines)
-
-
-def _compile_trace(
-    exc_cause_list: List[Tuple[int, Exception]],
-    /,
-    total_exc: int,
-    tb_depth: Optional[int],
-    exc_args_limit: int,
-    indent: int
+    formatter_required: bool = False
 ):
-    r"""Compile the exception chain into trace lines."""
-    trace_lines: List[str] = []
-    for idx, (exc_idx, exc) in enumerate(exc_cause_list):
-        # for exception chain
-        _base_indent = _add_indent(indent)
-        is_final = exc_idx == total_exc - 1
-        # actual exception
-        if len(exc_cause_list) > 1 and idx > 0:
-            # non-first exception in chain with multiple exceptions
-            indent_arrow = cstr(
-                _add_indent(indent-3),
-                _CAUSE_LINE["corner"] + "<" + _CAUSE_LINE["horizontal"],
-                f"({total_exc - exc_idx})",
-                _EXC_ARROW_STR
-            )
-        else:
-            indent_arrow = cstr(_base_indent, f"({total_exc - exc_idx})", _EXC_ARROW_STR)
-        trace_lines.append(indent_arrow)
-        # exception name
-        exc_name = cstr(
-            exc.__class__.__name__,
-            fg=None if is_final else "c",
-            bg="lr" if is_final else None,
-            styles={"dim"} if is_final else {"bold"}
-        )
-        # 3. stack traceback
-        if len(exc_cause_list) > 1 and idx < len(exc_cause_list) - 1:
-            # non-final exception in chain with multiple exceptions
-            _tb_indent = cstr(_base_indent, f" {_CAUSE_LINE['vertical']}   ")
-        else:
-            _tb_indent = _add_indent(len(indent_arrow) - 1)
-        tb_stack = list(traceback.extract_tb(exc.__traceback__))
-        if not tb_depth or len(tb_stack) == 1:
-            # only one traceback frame
-            tb_stack = tb_stack[-1:]
-            _name_width = len(exc_name)
-        else:
-            if 0 < tb_depth < len(tb_stack):
-                _tb_omit_num = len(tb_stack) - tb_depth
-                tb_stack = tb_stack[-tb_depth:]
-                _tb_len = len(tb_stack)
-                tb_stack.insert(0, cstr(f"... omitted {_tb_omit_num} traceback frame(s) ...", styles={"dim"}))
-            _tb_len = len(tb_stack)
-            tb_idx_width = len(str(_tb_len))
-            _name_width = max(len(_TB_STR) + tb_idx_width + 1, len(exc_name))
-        for tb_idx, tb in enumerate(tb_stack):
-            # for each traceback frame
-            if isinstance(tb, str):
-                # omitted traceback frames
-                trace_lines.extend([f"{_BRACE['upper']} ", tb])
+    """
+    Find a handler with the specified name in the logger.
+
+    Parameters
+    ----------
+        logger : logging.Logger
+            The logger to find the handler in.
+
+        handler_name : str
+            The name of the handler to be found.
+
+        formatter_required : bool, default to `False`
+            Control whether the handler must have a formatter to be considered valid.
+
+    Returns
+    -------
+        logging.Handler
+            The handler with the specified name if found, otherwise `None`.
+    """
+    for handler in logger.handlers:
+        if handler.get_name() == handler_name:
+            if formatter_required and handler.formatter is None:
                 continue
-            # traceback detail
-            _tb_detail = cstr(f"{tb.filename}({tb.lineno})", styles={"udl"})
-            if tb_idx == len(tb_stack) - 1:
-                # final traceback (exception raised here)
-                tb_prefix = _BRACE["lower"] if len(tb_stack) > 1 else ""
-                _tb_name = exc_name
-                _tb_styles = _FINAL_STYLES if is_final else set()
-                # 4. exception args
-                _e_args = _fmt_exc_args(exc.args, is_final)
-                if 0 < exc_args_limit < len(_e_args):
-                    _arg_omit_num = len(_e_args) - exc_args_limit
-                    _e_args = _e_args[:exc_args_limit]
-                    _e_args.append(
-                        cstr(f" ... omitted {_arg_omit_num} argument(s) ...", styles={"dim"})
-                    )
-                _e_args_space = _add_indent(_name_width + len(_tb_detail) + len(tb_prefix) + 5, nowrap=True)
-                arg_lines = []
-                for e_arg_idx, e_arg in enumerate(_e_args):
-                    # for each exception argument
-                    if e_arg_idx == 0:
-                        # first exception argument
-                        _prefix = f" {_BRACE['upper']}" if len(_e_args) > 1 else " "
-                        arg_lines.append(cstr(_prefix, e_arg, styles=[(None, _tb_styles)]))
-                    else:
-                        # non-first exception argument
-                        _prefix = _BRACE["lower"] if e_arg_idx == len(_e_args) - 1 else _BRACE["middle"]
-                        arg_lines.extend([_tb_indent, _e_args_space, _prefix, e_arg])
             else:
-                # non-final traceback
-                tb_prefix = _BRACE["upper"] if tb_idx == 0 else _BRACE["middle"]
-                _tb_name = cstr(
-                    f"{_TB_STR}-{str(len(tb_stack) - tb_idx - 1).zfill(tb_idx_width)}",
-                    fg="lg",
-                    styles={"bold"}
-                )
-                _tb_styles = {"dim"}
-                arg_lines = [cstr(" >>> ", fg="ly", styles={"bold", *_tb_styles}),
-                             cstr(tb.line, styles=_tb_styles)]
-            tb_indent = "" if tb_idx == 0 else _tb_indent
-            # traceback head
-            tb_head = cstr("<", _tb_name.center(_name_width), ": ", _tb_detail,
-                           ">", styles=[(None, {"italic", *_tb_styles})])
-            # 5. assemble
-            trace_lines.extend([tb_indent, tb_prefix, tb_head, *arg_lines])
-        # update
-        indent += 4
-
-    return trace_lines
-
-
-def _fmt_msg(msg: Any, /, limit: Optional[int] = None) -> str:
-    r"""Format message."""
-    msg = msg if isinstance(msg, str) else str(msg)
-    if limit is not None and len(msg) > limit:
-        msg = msg[:limit] + ".."
-    if msg and not msg.endswith(_END_SYMBOLS):
-        msg += "."
-    return msg
-
-
-def _add_indent(indent: int, /, nowrap: bool = False) -> str:
-    r"""Create indentation."""
-    return cstr(("" if nowrap else "\n") + " " * indent, styles={"disappear"})
-
-
-def _fmt_exc_args(e_args: Tuple[Any, ...], /, is_final: bool, is_top=True) -> List[str]:
-    r"""Format exception arguments."""
-    fmt_args: List[str] = []
-    for m in e_args:
-        if isinstance(m, Tuple):
-            fmt_args.extend(_fmt_exc_args(m, is_final, is_top=is_top))
-        elif isinstance(m, Exception):
-            # exception head
-            exc_name = cstr(m.__class__.__name__, fg="r" if is_final else "c")
-            e_msg = cstr("<", exc_name, "> ", styles={"italic"})
-            # exception args
-            sub_args = _fmt_exc_args(m.args, is_final, is_top=False)
-            if len(sub_args) > 1:
-                rest_msgs = [f", {_fmt_msg(arg, 12)}" for arg in sub_args[1:]]
-                e_msg += cstr("( ", styles={"dim"}) + sub_args[0] +\
-                    cstr(*rest_msgs, " )", styles={"dim"})
-            else:
-                e_msg += sub_args[0]
-            fmt_args.append(e_msg)
-        else:
-            prefix = _SHORT_LINE if is_top and len(e_args) > 1 else ""
-            fmt_args.append(prefix + _fmt_msg(m))
-
-    return fmt_args
+                return handler
+    return None

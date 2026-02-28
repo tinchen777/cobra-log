@@ -50,7 +50,7 @@ pip install cobra-log
 from cobra_log import (use_logger, info, warning, error)
 
 # initialize and activate loggers
-use_logger("my_logger_1", "stdout")
+use_logger("my_logger_1", "stdout", "console")
 use_logger("my_logger_2", "log_save_path.log", ("stdout", "error"))
 # use my_logger_2
 try:
@@ -84,5 +84,5 @@ See LICENSE in the repository.
 
 ## Links
 
-- Homepage/Repo: https://github.com/tinchen777/cobra-log.git
-- Issues: https://github.com/tinchen777/cobra-log.git/issues
+- [Homepage/Repo](https://github.com/tinchen777/cobra-log.git)
+- [Issues](https://github.com/tinchen777/cobra-log.git/issues)

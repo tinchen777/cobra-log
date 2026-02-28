@@ -9,6 +9,10 @@ class CobraLogWarning(Warning):
     r"""Base warning class for :pkg:`cobra_log` package."""
 
 
+class NoColorWarning(CobraLogWarning):
+    r"""Warning raised when the color library `cobra-color` is not available."""
+
+
 class InvalidHandlerWarning(CobraLogWarning):
     r"""Warning raised when an invalid handler is added to a logger."""
 
@@ -16,10 +20,6 @@ class InvalidHandlerWarning(CobraLogWarning):
 # === ERROR ===
 class CobraLogError(Exception):
     r"""Base error class for :pkg:`cobra_log` package."""
-
-
-# class CobraLogValueError(CobraLogError):
-#     r"""Exception raised for invalid values in :pkg:`cobra_log` functions."""
 
 
 # === EXCEPTION ===

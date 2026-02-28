@@ -6,79 +6,21 @@ from __future__ import annotations
 import logging
 import warnings
 import os
-from typing import (Any, Optional, Tuple, List, Dict, Union)
+from typing import (Optional, Tuple, List, Dict, Union)
 
-from .handlers import (_name_to_level, file_handler, stream_handler)
+from .handlers import (
+    console_handler,
+    file_handler,
+    stream_handler,
+    ConsoleHandler
+)
+from ._utils import get_log_level
 from .exceptions import InvalidHandlerWarning
 from .types import (T_LogLevelName, T_Handler)
 
 
-# === cstr & smart_print ===
-try:
-    from cobra_color import (cstr as t_cstr, safe_print as t_safe_print)  # type: ignore
-    _COLOR_AVAIL = True
-except ImportError:
-    warnings.warn(
-        "Missing color library `cobra-color`, terminal color display unavailable for `cobra-log`.",
-        category=ImportWarning,
-        stacklevel=3
-    )
-    _COLOR_AVAIL = False
-
-_USE_COLOR: bool = _COLOR_AVAIL
-
-
-def cstr(*objects: Any, sep: str = "", **kwargs):
-    if _USE_COLOR:
-        return t_cstr(*objects, sep=sep, **kwargs)
-    return sep.join(objects)
-
-
-def display(*args, **kwargs):
-    if _COLOR_AVAIL:
-        return t_safe_print(*args, **kwargs)
-    print(*args, **kwargs)
-
-
-def enable_color(flag: bool = True, /):
-    r"""
-    Enable or disable colored terminal display. Requires :pkg:`cobra-color`.
-    """
-    global _USE_COLOR
-    _USE_COLOR = flag and _COLOR_AVAIL
-
-
-# === trace display ===
-_TRACE_CONFIG = {
-    "with_border": True,
-    "exc_mode": "context",
-    "exc_depth": -1,
-    "tb_depth": -1,
-    "exc_args_limit": -1,
-    "min_width": 50
-}
-
-
-def set_trace(**kwargs: Any):
-    r"""
-    Set the global trace display configuration.
-
-    Parameters
-    ----------
-        **kwargs : Any
-            The trace display configuration to be updated. Including:
-            - `with_border`: bool
-            - `exc_mode`: Literal["cause", "context"]
-            - `exc_depth`: int
-            - `tb_depth`: Optional[int]
-            - `exc_args_limit`: int
-    """
-    global _TRACE_CONFIG
-    _TRACE_CONFIG.update(kwargs)
-
-
-# === log ===
-_ACTIVATED_LOGGER: logging.Logger = None
+_LOGGER: logging.Logger = None
+_DEBUG_CONSOLE_HANDLER = console_handler()
 
 
 def add_handler(
@@ -88,7 +30,7 @@ def add_handler(
     level: Optional[T_LogLevelName] = None,
     conflict: Union[bool, Dict[str, logging.Handler]] = False
 ):
-    r"""
+    """
     Add a log handler to the specified logger.
 
     Parameters
@@ -99,6 +41,7 @@ def add_handler(
         handler : T_Handler
             The log handler to be added.
             - _logging.Handler_: The log handler instance to be added;
+            - `"console"`: A console handler with the name `"cobra-console"`;
             - `"stdout"`: A stream handler with the name `"stdout"`;
             - _T_PathType_: A file handler with the name of the save path.
 
@@ -122,16 +65,26 @@ def add_handler(
     _file_path = None
     if isinstance(handler, logging.Handler):
         # logging.Handler instance
-        # set name
+        # set name for handler if not set
         if isinstance(handler, logging.FileHandler):
             _file_path = handler.baseFilename
-            handler.set_name(_file_path)
-        elif isinstance(handler, logging.StreamHandler):
-            handler.set_name("stdout")
+            if handler.get_name() is None:
+                handler.set_name(_file_path)
+        elif handler.get_name() is None:
+            if isinstance(handler, logging.StreamHandler):
+                handler.set_name("stdout")
+            elif isinstance(handler, ConsoleHandler):
+                handler.set_name("cobra-console")
         # add level
         if level is not None:
-            handler.setLevel(_name_to_level(level))
+            handler.setLevel(get_log_level(level))
         _handler = handler
+    elif handler == "console":
+        # console handler
+        if level is None or level == "debug":
+            _handler = _DEBUG_CONSOLE_HANDLER
+        else:
+            _handler = console_handler(level=level)
     elif handler == "stdout":
         # stream handler
         _handler = stream_handler(level=level or "warning")
@@ -140,7 +93,7 @@ def add_handler(
             _file_path = handler
             _handler = file_handler(_file_path, level=level or "debug")
         except Exception as e:
-            raise ValueError(f"Log handler must be a `logging.Handler` instance, `'stdout'` or a valid log file path, got {handler!r}.") from e
+            raise ValueError(f"Log handler must be a `logging.Handler` instance, `'console'`, `'stdout'` or a valid log file path, got {handler!r}.") from e
     # create log directory
     if _file_path is not None:
         log_dir = os.path.dirname(_file_path)
@@ -165,11 +118,12 @@ def use_logger(
     name: str,
     /,
     *handlers: Union[Tuple[T_Handler, ...], T_Handler],
+    default_handler: Optional[T_Handler] = "console",
     overwrite_handler: bool = False,
     level: T_LogLevelName = "debug",
     propagate: bool = False
 ):
-    r"""
+    """
     Activate a logger with the specified name, creating it if necessary, and add handlers to it.
 
     NOTE: Until another logger is activated, all exceptions are processed by the currently active logger.
@@ -181,8 +135,11 @@ def use_logger(
 
         *handlers : Union[Tuple[T_Handler, ...], T_Handler]
             The log handlers to be added to the logger. Each handler can be specified in the following formats:
-            - _T_Handler_: The log handler to be added. See also :param:`handler` in :meth:`add_handler`;
-            - Tuple[T_Handler, T_LogLevelName]: The log handler to be added with the log level for this handler. See also :param:`handler` in :meth:`add_handler`.
+            - _T_Handler_: The log handler to be added. See also :param:`handler` in :func:`add_handler`;
+            - Tuple[T_Handler, T_LogLevelName]: The log handler to be added with the log level for this handler. See also :param:`handler` in :func:`add_handler`.
+
+        default_handler : Optional[T_Handler], default to `"console"`
+            The default log handler to be added when there is no handler in the current logger after adding the specified handlers. See also :param:`handler` in :func:`add_handler`.
 
         overwrite_handler : bool, default to `False`
             Control whether to overwrite an existing handler with the same name for each handler.
@@ -200,19 +157,20 @@ def use_logger(
         logging.Logger
             The logger with the specified name.
     """
-    global _ACTIVATED_LOGGER
+    global _LOGGER
     # register (if necessary) and activate logger
-    _ACTIVATED_LOGGER = logging.getLogger(name)
+    _LOGGER = logging.getLogger(name)
     # logger level
-    _new_level = _name_to_level(level)
-    if _ACTIVATED_LOGGER.level != _new_level:
-        _ACTIVATED_LOGGER.setLevel(_new_level)
+    _new_level = get_log_level(level)
+    if _LOGGER.level != _new_level:
+        _LOGGER.setLevel(_new_level)
     # propagate
-    _ACTIVATED_LOGGER.propagate = bool(propagate)
+    _LOGGER.propagate = bool(propagate)
     # conflict
-    _conflict = overwrite_handler
-    if _conflict is True:
-        _conflict = {h.get_name(): h for h in _ACTIVATED_LOGGER.handlers}
+    if overwrite_handler and _LOGGER.hasHandlers():
+        _conflict = {h.get_name(): h for h in _LOGGER.handlers}
+    else:
+        _conflict = False
     # add handlers
     for handler in handlers:
         if not handler:
@@ -220,20 +178,31 @@ def use_logger(
         _handler = handler
         _handler_level = None
         if isinstance(handler, (Tuple, List)):
+            # handler with level
             _handler = handler[0]
             if len(handler) > 1:
                 _handler_level = handler[1]
         # add handler
         try:
-            add_handler(_ACTIVATED_LOGGER, _handler, level=_handler_level, conflict=_conflict)
+            add_handler(_LOGGER, _handler, level=_handler_level, conflict=_conflict)
         except ValueError as e:
             warnings.warn(
-                f"Failed to add handler {_handler} to logger '{name}': {e}",
+                f"Failed to add handler {_handler!r} to logger {name!r}: {e}",
                 category=InvalidHandlerWarning,
-                stacklevel=3
+                stacklevel=2
+            )
+    # add default handler if there is no handler
+    if not _LOGGER.hasHandlers() and default_handler is not None:
+        try:
+            add_handler(_LOGGER, default_handler)
+        except ValueError as e:
+            warnings.warn(
+                f"Failed to add default handler {default_handler!r} to logger {name!r}: {e}",
+                category=InvalidHandlerWarning,
+                stacklevel=2
             )
 
-    return _ACTIVATED_LOGGER
+    return _LOGGER
 
 
 use_logger("default")

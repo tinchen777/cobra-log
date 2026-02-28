@@ -13,4 +13,4 @@ T_PathType = Union[str, PathLike[str]]
 
 T_LogLevelName = Literal["debug", "info", "warning", "error", "critical"]
 
-T_Handler = Union[logging.Handler, T_PathType, Literal["stdout"]]
+T_Handler = Union[logging.Handler, T_PathType, Literal["stdout", "console"]]

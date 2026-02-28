@@ -10,19 +10,18 @@ import cobra_log
 
 def test_logger_switch():
     # initialize and activate loggers
-    use_logger("my_logger_1", "test1.log", "test11.log", ("stdout", "info"))
-    use_logger("my_logger_2", ("test2.log", "error"), ("stdout", "info"))
+    use_logger("my_logger_1", "test1.log", "test11.log", ("console", "info"))
+    use_logger("my_logger_2", ("test2.log", "error"), ("console", "info"))
     print(logging.root.manager.loggerDict)
-
     # use my_logger_2
-    print(cobra_log._core._ACTIVATED_LOGGER.handlers)
+    print(cobra_log._core._LOGGER.handlers)
     print("===========")
     info("A info 2 occurred.")
     error("A error 2 occurred.")
 
     print("===========")
     use_logger("my_logger_1")
-    print(cobra_log._core._ACTIVATED_LOGGER.handlers)
+    print(cobra_log._core._LOGGER.handlers)
     info("A info 1 occurred.")
     error("A error 1 occurred.")
 
@@ -35,15 +34,15 @@ def test_logger_overwrite():
     handler2.setLevel("ERROR")
 
     use_logger("my_logger_1", "test1.log", "test11.log", ("stdout", "info"), handler2)
-    print(cobra_log._core._ACTIVATED_LOGGER.handlers)
+    print(cobra_log._core._LOGGER.handlers)
 
     use_logger("my_logger_1", "test1.log", "test11.log", ("stdout", "info"), handler1, overwrite_handler=True)
-    print(cobra_log._core._ACTIVATED_LOGGER.handlers)
+    print(cobra_log._core._LOGGER.handlers)
 
 
 if __name__ == "__main__":
-    # test_logger_switch()
+    test_logger_switch()
     
-    test_logger_overwrite()
+    # test_logger_overwrite()
 
 

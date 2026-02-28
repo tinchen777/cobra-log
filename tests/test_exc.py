@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, "/data/tianzhen/my_packages/cobra-log/src")
 
-from cobra_log import (warning, info, error, use_logger, set_trace, critical)
+from cobra_log import (warning, info, error, use_logger, critical)
 
 
 def test_cobra_log():
@@ -20,7 +20,7 @@ def test_cobra_log():
     except Exception:
         warning("An error occurred during the test.")
         info("Continuing execution after warning.")
-        error("An error occurred during the test.", "")
+        error("An error occurred during the test.", None)
         # critical("A critical error occurred during the test.")
 
 
@@ -29,7 +29,7 @@ def test_cobra_log_2():
         raise KeyError("This is the first exception")
 
     except Exception as e:
-        warning("An error occurred during the test.", e, loc=True)
+        warning("An error occurred during the test.", e, stack=True)
         info("Continuing execution after warning.")
         info("Continuing execution after warning.", e, outline=True)
         critical("A critical error occurred during the test.")
@@ -67,15 +67,15 @@ def test_cobra_log_4():
 
 
 if __name__ == "__main__":
-    set_trace(with_border=True, exc_depth=3, tb_depth=3, exc_args_limit=3, min_width=1)
-    use_logger("my log 1", "test_log.log", level="debug")
+    use_logger("my log 1", "console", "test_log1.log", level="debug")
     test_cobra_log()
     print("\n" + "=" * 80 + "\n")
-    use_logger("my log 2", "test_log.log", level="debug")
+    use_logger("my log 2", "console", "test_log2.log", level="debug")
     test_cobra_log_2()
     print("\n" + "=" * 80 + "\n")
-    use_logger("my log 3", "test_log.log", level="debug")
+    use_logger("my log 3", "console", "test_log3.log", level="debug")
     test_cobra_log_3()
     print("\n" + "=" * 80 + "\n")
-    use_logger("my log 4", "test_log.log", level="debug")
+    use_logger("my log 4", "console", "test_log4.log", level="debug")
     test_cobra_log_4()
+    
