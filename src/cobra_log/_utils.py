@@ -122,8 +122,7 @@ def get_log_level(level_name: T_LogLevelName, /):
         int
             The logging level value.
     """
-    level_name = str(level_name).upper()
-    return logging._nameToLevel.get(level_name, logging.NOTSET)
+    return logging._nameToLevel.get(str(level_name).upper(), logging.NOTSET)
 
 
 def find_handler(

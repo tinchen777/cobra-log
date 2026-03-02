@@ -135,7 +135,7 @@ class CobraRichFormatter(logging.Formatter):
         self._exc_args_limit = exc_args_limit
         self._min_width = min_width
 
-    def formatException(self, exception: Any, /, indent: int) -> str:
+    def formatStackException(self, exception: Any, /, indent: int) -> str:
         """
         Trace the exception chain and format it as a string.
 
@@ -217,10 +217,11 @@ class CobraRichFormatter(logging.Formatter):
         Format the message for a log record.
         """
         # main message
-        main_msg = cstr(self._style.format(record), **record.pattern)
+        main_msg = cstr(self._style.format(record), **getattr(record, "pattern", {}))
         # indent
-        if record.indent > 0:
-            main_msg = cstr(" " * record.indent, main_msg)
+        indent = getattr(record, "indent", 0)
+        if indent > 0:
+            main_msg = cstr(" " * indent, main_msg)
 
         return main_msg
 
@@ -235,7 +236,7 @@ class CobraRichFormatter(logging.Formatter):
         using LogRecord.getMessage(). If the formatting string uses the
         time (as determined by a call to usesTime(), formatTime() is
         called to format the event time. If there is exception information,
-        it is formatted using formatException() and appended to the message.
+        it is formatted using formatStackException() and appended to the message.
         """
         # add & format message
         record.message = self.fmt_msg = _fmt_msg(record.getMessage())
@@ -252,7 +253,7 @@ class CobraRichFormatter(logging.Formatter):
             record.stack = ""
         # add indent
         record.indent = getattr(record, "indent", 0)
-        # add pattern
+        # add patterns
         record.pattern = getattr(record, "pattern", {})
         record.border_pattern = getattr(record, "border_pattern", {})
 
@@ -260,7 +261,7 @@ class CobraRichFormatter(logging.Formatter):
         # format exception
         if record.exc_info and record.exc_info[1] and not hasattr(record, "exc_traced"):
             # Cache the exception traceback to avoid converting it multiple times (it's constant anyway)
-            record.exc_traced = self.formatException(
+            record.exc_traced = self.formatStackException(
                 record.exc_info[1],
                 indent=3 if self._with_border else 4
             )
@@ -321,6 +322,7 @@ class CobraRichFormatter(logging.Formatter):
             if not self._tb_depth or len(tb_stack) == 1:
                 # only one traceback frame
                 tb_stack = tb_stack[-1:]
+                tb_idx_width = 0
                 _name_width = len(exc_name)
             else:
                 if 0 < self._tb_depth < len(tb_stack):
