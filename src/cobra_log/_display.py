@@ -13,7 +13,7 @@ try:
     _COLOR_AVAIL = True
 except ImportError:
     warnings.warn(
-        "Missing color library `cobra-color`, terminal color display unavailable for `cobra-log`.",
+        "Missing color library `cobra-color`, terminal color display unavailable for `cobra-log`. Install it via: pip install cobra-log[color]",
         category=NoColorWarning,
         stacklevel=3
     )

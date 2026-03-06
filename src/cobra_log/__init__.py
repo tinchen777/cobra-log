@@ -1,7 +1,7 @@
 # src/cobra_log/__init__.py
 """
 cobra-log
-===========
+=========
 
 A lightweight and easy-to-use logging library for Python.
 

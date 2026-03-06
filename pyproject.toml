@@ -22,6 +22,15 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 
+[project.optional-dependencies]
+color = [
+    "cobra-color>=1.3.9",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
 [project.urls]
 Homepage = "https://github.com/tinchen777/cobra-log.git"
 Repository = "https://github.com/tinchen777/cobra-log.git"

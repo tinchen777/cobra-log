@@ -26,10 +26,20 @@ A lightweight and easy-to-use logging library for Python.
 
 ## Installation
 
-Stable (once published):
+### Install from PyPI
+
+This installs the core package with minimal dependencies.
 
 ```bash
 pip install cobra-log
+```
+
+### Install with Optional Dependencies
+
+color support.
+
+```bash
+pip install cobra-log[color]
 ```
 
 ## Quick Start
@@ -76,7 +86,7 @@ info("An info occurred.")
 ## Requirements
 
 - Python >= 3.9
-- (Optional) cobra-color >= 1.3.0
+- (Optional) `cobra-color` >= 1.3.9
 
 ## License
 
