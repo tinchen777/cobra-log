@@ -122,7 +122,7 @@ def use_logger(
     overwrite_handler: bool = False,
     level: T_LogLevelName = "debug",
     propagate: bool = False
-):
+) -> logging.Logger:
     """
     Activate a logger with the specified name, creating it if necessary, and add handlers to it.
 
@@ -156,6 +156,11 @@ def use_logger(
     -------
         logging.Logger
             The logger with the specified name.
+
+    Examples
+    --------
+    >>> use_logger("my_logger_1", "stdout", ("console", "debug"))
+    >>> use_logger("my_logger_2", "log_save_path.log", "stdout")
     """
     global _LOGGER
     # register (if necessary) and activate logger
