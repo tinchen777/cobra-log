@@ -60,7 +60,7 @@ from ._utils import (box_lines, get_log_level, find_handler)
 
 
 __author__ = "Zhen Tian"
-__version__ = "2.0.2"
+__version__ = "2.0.3"
 
 __all__ = [
     "use_logger",
