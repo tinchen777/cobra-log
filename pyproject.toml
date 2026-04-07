@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-color = ["cobra-color>=1.3.9"]
+color = ["cobra-color>=1.3.11"]
 dev = [
     "pytest",
     "pytest-cov",
