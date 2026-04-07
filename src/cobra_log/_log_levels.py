@@ -42,9 +42,10 @@ def _log(func: Callable, msg: str, exc: Optional[Any], stack: Union[bool, int], 
 
 def critical(
     msg: str = "",
-    /, *,
+    /,
     exc: Optional[Any] = True,
-    throw: Union[Optional[Exception], Literal["fatal"]] = "fatal",
+    *,
+    throw: Union[Optional[type[Exception]], Literal["fatal"]] = "fatal",
     stack: Union[bool, int] = True,
     indent: int = 0,
     display: bool = True
@@ -65,7 +66,7 @@ def critical(
             - `True`: Try to catch the exception in the current context. If no exception is caught, no exception information will be recorded;
             - `None`: No exception information will be recorded.
 
-        throw : Union[Optional[Exception], Literal["fatal"]], default to `"fatal"`
+        throw : Union[Optional[type[Exception]], Literal["fatal"]], default to `"fatal"`
             The type of exception to be output after logging, use `raise` to throw the exception.
             - `"fatal"`: Return a :class:`SystemExit` exception with the formatted message, which will cause the program to `exit` immediately;
             - _Exception_: Return the specified exception with the description message;
@@ -110,9 +111,10 @@ def critical(
 
 def error(
     msg: str = "",
-    /, *,
+    /,
     exc: Optional[Any] = True,
-    throw: Optional[Exception] = None,
+    *,
+    throw: Optional[type[Exception]] = None,
     stack: Union[bool, int] = True,
     indent: int = 0,
     display: bool = True
@@ -133,7 +135,7 @@ def error(
             - `True`: Try to catch the exception in the current context. If no exception is caught, no exception information will be recorded;
             - `None`: No exception information will be recorded.
 
-        throw : Optional[Exception], default to `None`
+        throw : Optional[type[Exception]], default to `None`
             The type of exception to be output after logging, use `raise` to throw the exception.
             - _Exception_: Return the specified exception with the description message;
             - _others_: Return :class:`ErrorException` exception with the description message.
@@ -173,9 +175,10 @@ def error(
 
 def warning(
     msg: str = "",
-    /, *,
+    /,
     exc: Optional[Any] = True,
-    throw: Optional[Exception] = None,
+    *,
+    throw: Optional[type[Exception]] = None,
     stack: Union[bool, int] = True,
     dim: bool = False,
     indent: int = 0,
@@ -197,7 +200,7 @@ def warning(
             - `True`: Try to catch the exception in the current context. If no exception is caught, no exception information will be recorded;
             - `None`: No exception information will be recorded.
 
-        throw : Optional[Exception], default to `None`
+        throw : Optional[type[Exception]], default to `None`
             The type of exception to be output after logging, use `raise` to throw the exception.
             - _Exception_: Return the specified exception with the description message;
             - _others_: Return :class:`WarningException` exception with the description message.
@@ -240,8 +243,9 @@ def warning(
 
 def info(
     msg: str = "",
-    /, *,
+    /,
     exc: Optional[Any] = None,
+    *,
     stack: Union[bool, int] = False,
     outline: bool = False,
     indent: int = 0,
