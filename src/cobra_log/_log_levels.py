@@ -51,7 +51,7 @@ def critical(
     display: bool = True
 ):
     """
-    `CRITICAL-ERROR` or `FATAL-ERROR` level with `log` record (requires :func:`log_init`).
+    `CRITICAL-ERROR` or `FATAL-ERROR` level with `log` record (requires :func:`use_logger`).
 
     NOTE: Used when the overall program is not running.
 
@@ -120,7 +120,7 @@ def error(
     display: bool = True
 ):
     """
-    `ERROR` level with `log` record (requires :func:`log_init`).
+    `ERROR` level with `log` record (requires :func:`use_logger`).
 
     NOTE: Used when some functions are not running.
 
@@ -185,7 +185,7 @@ def warning(
     display: bool = True
 ):
     """
-    `WARNING` level with `log` record (requires :func:`log_init`).  # FIXME
+    `WARNING` level with `log` record (requires :func:`use_logger`).
 
     NOTE: Used when unexpected events occur, and the program can still run normally.
 
@@ -252,7 +252,7 @@ def info(
     display: bool = True
 ):
     """
-    `INFO` level with `log` record (requires :func:`log_init`).
+    `INFO` level with `log` record (requires :func:`use_logger`).
 
     NOTE: Used to record key node information.
 
@@ -293,7 +293,7 @@ def info(
 
 def debug(*args: Any, **kwargs: Any):
     """
-    `DEBUG` level with `log` record (requires :func:`log_init`).
+    `DEBUG` level with `log` record (requires :func:`use_logger`).
 
     NOTE: Used for debugging.
     """
