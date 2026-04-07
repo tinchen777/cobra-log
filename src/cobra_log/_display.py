@@ -7,13 +7,12 @@ from typing import Any
 
 from .exceptions import NoColorWarning
 
-
 try:
     from cobra_color import (cstr as t_cstr, safe_print as t_safe_print)  # type: ignore
     _COLOR_AVAIL = True
 except ImportError:
     warnings.warn(
-        "Missing color library `cobra-color`, terminal color display unavailable for `cobra-log`. Install it via: pip install cobra-log[color]",
+        "Missing dependency `cobra-color`, terminal color display unavailable for `cobra-log`. Install it via: pip install cobra-log[color]",
         category=NoColorWarning,
         stacklevel=3
     )

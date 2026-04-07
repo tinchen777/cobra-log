@@ -10,7 +10,6 @@ from typing import (Optional, Literal, Any, Tuple, List)
 from .._display import cstr
 from .._utils import box_lines
 
-
 _STACK_FMT = r"[%(filename)s->%(funcName)s(%(lineno)d)]"
 _FRAME_GAP = 2
 

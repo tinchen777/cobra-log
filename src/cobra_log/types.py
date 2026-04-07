@@ -9,8 +9,8 @@ from os import PathLike
 from typing import (Literal, Union)
 
 
-T_PathType = Union[str, PathLike[str]]
+PathType = Union[str, PathLike[str]]
 
-T_LogLevelName = Literal["debug", "info", "warning", "error", "critical"]
+LogLevelName = Literal["debug", "info", "warning", "error", "critical"]
 
-T_Handler = Union[logging.Handler, T_PathType, Literal["stdout", "console"]]
+HandlerType = Union[logging.Handler, PathType, Literal["stdout", "console"]]

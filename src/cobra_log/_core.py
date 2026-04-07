@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 import warnings
 import os
-from typing import (Optional, Tuple, List, Dict, Union)
+from typing import (Optional, Tuple, List, Dict, Union, TYPE_CHECKING)
 
 from .handlers import (
     console_handler,
@@ -16,18 +16,19 @@ from .handlers import (
 )
 from ._utils import get_log_level
 from .exceptions import InvalidHandlerWarning
-from .types import (T_LogLevelName, T_Handler)
 
+if TYPE_CHECKING:
+    from .types import (LogLevelName, HandlerType)
 
-_LOGGER: logging.Logger = None
+_LOGGER: logging.Logger = None  # type: ignore
 _DEBUG_CONSOLE_HANDLER = console_handler()
 
 
 def add_handler(
     logger: logging.Logger,
-    handler: T_Handler,
-    /,
-    level: Optional[T_LogLevelName] = None,
+    handler: HandlerType,
+    /, *,
+    level: Optional[LogLevelName] = None,
     conflict: Union[bool, Dict[str, logging.Handler]] = False
 ):
     """
@@ -38,14 +39,14 @@ def add_handler(
         logger : logging.Logger
             The logger to add the handler.
 
-        handler : T_Handler
+        handler : HandlerType
             The log handler to be added.
             - _logging.Handler_: The log handler instance to be added;
             - `"console"`: A console handler with the name `"cobra-console"`;
             - `"stdout"`: A stream handler with the name `"stdout"`;
             - _T_PathType_: A file handler with the name of the save path.
 
-        level : Optional[T_LogLevelName], default to `None`
+        level : Optional[LogLevelName], default to `None`
             The lowest level of log output to the handler.
             - _T_LogLevelName_: Set the logging level of this handler;
             - `None`: Keep the handler level unchanged.
@@ -117,10 +118,10 @@ def add_handler(
 def use_logger(
     name: str,
     /,
-    *handlers: Union[Tuple[T_Handler, ...], T_Handler],
-    default_handler: Optional[T_Handler] = "console",
+    *handlers: Union[Tuple[HandlerType, ...], HandlerType],
+    default_handler: Optional[HandlerType] = "console",
     overwrite_handler: bool = False,
-    level: T_LogLevelName = "debug",
+    level: LogLevelName = "debug",
     propagate: bool = False
 ) -> logging.Logger:
     """
@@ -133,12 +134,12 @@ def use_logger(
         name : str
             The name of the logger.
 
-        *handlers : Union[Tuple[T_Handler, ...], T_Handler]
+        *handlers : Union[Tuple[HandlerType, ...], HandlerType]
             The log handlers to be added to the logger. Each handler can be specified in the following formats:
-            - _T_Handler_: The log handler to be added. See also :param:`handler` in :func:`add_handler`;
-            - Tuple[T_Handler, T_LogLevelName]: The log handler to be added with the log level for this handler. See also :param:`handler` in :func:`add_handler`.
+            - _HandlerType_: The log handler to be added. See also :param:`handler` in :func:`add_handler`;
+            - Tuple[HandlerType, LogLevelName]: The log handler to be added with the log level for this handler. See also :param:`handler` in :func:`add_handler`.
 
-        default_handler : Optional[T_Handler], default to `"console"`
+        default_handler : Optional[HandlerType], default to `"console"`
             The default log handler to be added when there is no handler in the current logger after adding the specified handlers. See also :param:`handler` in :func:`add_handler`.
 
         overwrite_handler : bool, default to `False`
@@ -146,7 +147,7 @@ def use_logger(
 
             NOTE: It does not affect the handler in the current :param:`handlers`.
 
-        level : T_LogLevelName, default to `"debug"`
+        level : LogLevelName, default to `"debug"`
             The lowest level of the logger.
 
         propagate : bool, default to `False`

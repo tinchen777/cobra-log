@@ -2,11 +2,14 @@
 # Python version: 3.9
 # @TianZhen
 
+from __future__ import annotations
 import logging
-from typing import (Any, List, Sequence)
+from typing import (Any, List, Sequence, TYPE_CHECKING)
 
 from ._display import cstr
-from .types import T_LogLevelName
+
+if TYPE_CHECKING:
+    from .types import LogLevelName
 
 
 _FRAME = {
@@ -39,7 +42,7 @@ _FRAME = {
 
 def box_lines(
     lines: Sequence[str],
-    /,
+    /, *,
     top_indent: int = 0,
     rest_indent: int = 0,
     frame_style: str = "light",
@@ -108,13 +111,13 @@ def box_lines(
     return cstr(*boxed_lines, sep="\n")
 
 
-def get_log_level(level_name: T_LogLevelName, /):
+def get_log_level(level_name: LogLevelName, /) -> int:
     """
     Get the logging level value from the logging level name.
 
     Parameters
     ----------
-        level_name : T_LogLevelName
+        level_name : LogLevelName
             The logging level name.
 
     Returns
@@ -128,7 +131,7 @@ def get_log_level(level_name: T_LogLevelName, /):
 def find_handler(
     logger: logging.Logger,
     handler_name: str,
-    /,
+    /, *,
     formatter_required: bool = False
 ):
     """

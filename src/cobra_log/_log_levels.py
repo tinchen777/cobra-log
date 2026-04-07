@@ -32,7 +32,7 @@ def _log(func: Callable, msg: str, exc: Optional[Any], stack: Union[bool, int], 
         stack_info, stacklevel = _parse_stack(stack)
         func(msg, exc_info=exc, stack_info=stack_info, stacklevel=stacklevel, extra=extra)
         # rich results
-        console_handler = find_handler(_core._LOGGER, "cobra-console", True)
+        console_handler = find_handler(_core._LOGGER, "cobra-console", formatter_required=True)
         if console_handler is not None and console_handler.formatter is not None:
             fmt_text = getattr(console_handler.formatter, "fmt_text", msg)
             fmt_msg = getattr(console_handler.formatter, "fmt_msg", msg)
@@ -42,7 +42,7 @@ def _log(func: Callable, msg: str, exc: Optional[Any], stack: Union[bool, int], 
 
 def critical(
     msg: str = "",
-    /,
+    /, *,
     exc: Optional[Any] = True,
     throw: Union[Optional[Exception], Literal["fatal"]] = "fatal",
     stack: Union[bool, int] = True,
@@ -110,7 +110,7 @@ def critical(
 
 def error(
     msg: str = "",
-    /,
+    /, *,
     exc: Optional[Any] = True,
     throw: Optional[Exception] = None,
     stack: Union[bool, int] = True,
@@ -173,7 +173,7 @@ def error(
 
 def warning(
     msg: str = "",
-    /,
+    /, *,
     exc: Optional[Any] = True,
     throw: Optional[Exception] = None,
     stack: Union[bool, int] = True,
@@ -182,7 +182,7 @@ def warning(
     display: bool = True
 ):
     """
-    `WARNING` level with `log` record (requires :func:`log_init`).
+    `WARNING` level with `log` record (requires :func:`log_init`).  # FIXME
 
     NOTE: Used when unexpected events occur, and the program can still run normally.
 
@@ -240,7 +240,7 @@ def warning(
 
 def info(
     msg: str = "",
-    /,
+    /, *,
     exc: Optional[Any] = None,
     stack: Union[bool, int] = False,
     outline: bool = False,

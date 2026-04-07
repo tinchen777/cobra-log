@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cobra-log"
 dynamic = ["version"]
-description = "A lightweight and easy-to-use logging library for Python."
+description = "A lightweight Python logging library that combines standard logging with exception-friendly workflows and richer terminal output."
 readme = "README.md"
 license-files = ["LICENSE"]
 authors = [

@@ -6,12 +6,14 @@ from __future__ import annotations
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from typing import (Optional, Literal)
+from typing import (Optional, Literal, TYPE_CHECKING)
 
 from ._cobra_handlers import ConsoleHandler
 from ._cobra_formatters import CobraRichFormatter
 from .._utils import get_log_level
-from ..types import (T_LogLevelName, T_PathType)
+
+if TYPE_CHECKING:
+    from ..types import (LogLevelName, PathType)
 
 _CONSOLE_FMT = r"(%(name)s)%(prefix)s %(stack)s: %(message)s"
 _FILE_FMT = r"%(asctime)s - (%(name)s)<%(levelname)s> - %(pathname)s(%(lineno)d) - %(message)s"
@@ -20,7 +22,8 @@ _DATE_FMT = r"%y-%m-%d %H:%M:%S"
 
 
 def console_handler(
-    level: T_LogLevelName = "debug",
+    *,
+    level: LogLevelName = "debug",
     log_fmt: str = _CONSOLE_FMT,
     date_fmt: str = _DATE_FMT,
     stackfmt: Optional[str] = None,
@@ -38,7 +41,7 @@ def console_handler(
 
     Parameters
     ----------
-        level : T_LogLevelName, default to `"warning"`
+        level : LogLevelName, default to `"warning"`
             The lowest level of log output to the stream.
 
         other parameters
@@ -71,15 +74,15 @@ def console_handler(
 
 
 def file_handler(
-    save_path: T_PathType,
-    /,
-    level: T_LogLevelName = "debug",
+    save_path: PathType,
+    /, *,
+    level: LogLevelName = "debug",
     log_fmt: str = _FILE_FMT,
     date_fmt: str = _DATE_FMT,
-    mode="a",
+    mode: str = "a",
     backup_count: int = 0,
     max_bytes: int = 100*1024,
-    delay=True
+    delay: bool = True
 ):
     """
     Create a `rotating file handler` with `common formatter`. Open the specified file and use it as the stream for logging.
@@ -88,10 +91,10 @@ def file_handler(
 
     Parameters
     ----------
-        save_path : T_PathType
+        save_path : PathType
             The log file storage address.
 
-        level : T_LogLevelName, default to `"debug"`
+        level : LogLevelName, default to `"debug"`
             The lowest level of log file storage.
 
         log_fmt : str
@@ -147,7 +150,8 @@ def file_handler(
 
 
 def stream_handler(
-    level: T_LogLevelName = "warning",
+    *,
+    level: LogLevelName = "warning",
     log_fmt: str = _STDOUT_FMT,
     date_fmt: str = _DATE_FMT,
 ):
@@ -158,7 +162,7 @@ def stream_handler(
 
     Parameters
     ----------
-        level : T_LogLevelName, default to `"warning"`
+        level : LogLevelName, default to `"warning"`
             The lowest level of log output to the stream.
 
         log_fmt : str

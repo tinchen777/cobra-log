@@ -1,6 +1,9 @@
 <div align="center">
 
-<h2 id="title">🐱‍👓 cobra-log 🐱‍👓</h2>
+<h2 id="title">
+🐱‍👓 cobra-log 🐱‍👓<br>
+<sub>Exception-Aware Logging for Python with Rich Console Output</sub>
+</h2>
 
 [![PyPI version](https://img.shields.io/pypi/v/cobra-log.svg)](https://pypi.org/project/cobra-log/)
 ![Python](https://img.shields.io/pypi/pyversions/cobra-log?color=brightgreen)
@@ -14,15 +17,15 @@
 
 ## About
 
-A lightweight and easy-to-use logging library for Python.
+`cobra-log` is a lightweight Python logging library that combines standard logging with exception-friendly workflows and richer terminal output.
 
 - Python: 3.9+
 
 ## Features
 
-- 🚀 Seamless integration with Python's native exception mechanism.
-- 🚀 Vivid and detailed terminal output (need `cobra-color`).
-- 🚀 User-friendly log file management.
+- 🚀 **Exception-integrated logging API**: `critical`, `error`, and `warning` can return/raise typed exceptions while recording context and stack info.
+- 🚀 **Rich terminal presentation**: A custom console formatter supports styled output, bordered exception traces, and optional color support.
+- 🚀 **Flexible handler management**: Easy logger activation plus console, stdout, and rotating file handlers with per-handler levels and conflict/overwrite control.
 
 ## Installation
 
