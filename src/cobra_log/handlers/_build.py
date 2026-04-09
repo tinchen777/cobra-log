@@ -33,7 +33,7 @@ def console_handler(
     exc_depth: int = -1,
     tb_depth: Optional[int] = -1,
     exc_args_limit: int = -1
-):
+) -> ConsoleHandler:
     """
     Create a `console handler` with `cobra rich formatter`.
 
@@ -83,7 +83,7 @@ def file_handler(
     backup_count: int = 0,
     max_bytes: int = 100*1024,
     delay: bool = True
-):
+) -> RotatingFileHandler:
     """
     Create a `rotating file handler` with `common formatter`. Open the specified file and use it as the stream for logging.
 
@@ -154,7 +154,7 @@ def stream_handler(
     level: LogLevelName = "warning",
     log_fmt: str = _STDOUT_FMT,
     date_fmt: str = _DATE_FMT,
-):
+) -> logging.StreamHandler:
     """
     Create a `stream handler` with `common formatter`.
 

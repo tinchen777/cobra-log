@@ -24,33 +24,32 @@ Functions
 
 Examples
 --------
+- Basic usage::
 
-```python
-from cobra_log import (use_logger, info, warning, error)
+    from cobra_log import (use_logger, info, warning, error)
 
-# initialize and activate loggers
-use_logger("my_logger_1", "stdout", "console")
-use_logger("my_logger_2", "log_save_path.log", "stdout")
-# use my_logger_2
-try:
+    # initialize and activate loggers
+    use_logger("my_logger_1", "stdout", "console")
+    use_logger("my_logger_2", "log_save_path.log", "stdout")
+    # use my_logger_2
     try:
         try:
-            1 / 0
-        except Exception as e:
-            raise error("An error occurred.", throw=None) from e
-    except Exception as ee:
-        raise error(
-            "An error(TimeoutError) occurred.",
-            throw=TimeoutError
-        ) from ee
-except Exception:
-    critical("A critical error occurred.", throw=None)
-# activate my_logger_1
-use_logger("my_logger_1")
-# use my_logger_1
-warning("A warning occurred.")
-info("An info occurred.")
-```
+            try:
+                1 / 0
+            except Exception as e:
+                raise error("An error occurred.", throw=None) from e
+        except Exception as ee:
+            raise error(
+                "An error(TimeoutError) occurred.",
+                throw=TimeoutError
+            ) from ee
+    except Exception:
+        critical("A critical error occurred.", throw=None)
+    # activate my_logger_1
+    use_logger("my_logger_1")
+    # use my_logger_1
+    warning("A warning occurred.")
+    info("An info occurred.")
 """
 
 from ._core import (use_logger, add_handler)
@@ -60,7 +59,7 @@ from ._utils import (box_lines, get_log_level, find_handler)
 
 
 __author__ = "Zhen Tian"
-__version__ = "2.0.3"
+__version__ = "2.0.4"
 
 __all__ = [
     "use_logger",

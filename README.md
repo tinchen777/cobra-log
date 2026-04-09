@@ -47,7 +47,7 @@ pip install cobra-log[color]
 
 ## Quick Start
 
-- Simple warning
+- Simple warning:
 
   ```python
   from cobra_log import warning, use_logger
@@ -57,34 +57,34 @@ pip install cobra-log[color]
   warning("warning message")
   ```
 
-## Example
+- Basic usage:
 
-```python
-from cobra_log import (use_logger, info, warning, error)
+    ```python
+    from cobra_log import (use_logger, info, warning, error)
 
-# initialize and activate loggers
-use_logger("my_logger_1", "stdout", "console")
-use_logger("my_logger_2", "log_save_path.log", ("stdout", "error"))
-# use my_logger_2
-try:
+    # initialize and activate loggers
+    use_logger("my_logger_1", "stdout", "console")
+    use_logger("my_logger_2", "log_save_path.log", ("stdout", "error"))
+    # use my_logger_2
     try:
         try:
-            1 / 0
-        except Exception as e:
-            raise error("An error occurred.", throw=None) from e
-    except Exception as ee:
-        raise error(
-            "An error(TimeoutError) occurred.",
-            throw=TimeoutError
-        ) from ee
-except Exception:
-    critical("A critical error occurred.", throw=None)
-# activate my_logger_1
-use_logger("my_logger_1")
-# use my_logger_1
-warning("A warning occurred.")
-info("An info occurred.")
-```
+            try:
+                1 / 0
+            except Exception as e:
+                raise error("An error occurred.", throw=None) from e
+        except Exception as ee:
+            raise error(
+                "An error(TimeoutError) occurred.",
+                throw=TimeoutError
+            ) from ee
+    except Exception:
+        critical("A critical error occurred.", throw=None)
+    # activate my_logger_1
+    use_logger("my_logger_1")
+    # use my_logger_1
+    warning("A warning occurred.")
+    info("An info occurred.")
+    ```
 
 ## Requirements
 

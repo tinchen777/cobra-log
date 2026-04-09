@@ -32,7 +32,7 @@ def add_handler(
     conflict: Union[bool, Dict[str, logging.Handler]] = False
 ):
     """
-    Add a log handler to the specified logger.
+    Create a log handler and add it to the logger, or add an existing log handler to the logger.
 
     Parameters
     ----------
@@ -160,8 +160,20 @@ def use_logger(
 
     Examples
     --------
-    >>> use_logger("my_logger_1", "stdout", ("console", "debug"))
-    >>> use_logger("my_logger_2", "log_save_path.log", "stdout")
+    >>> from cobra_log import use_logger
+    >>> logger = use_logger("my_logger_1", "stdout", ("console", "debug"))
+    >>> logger.name
+    'my_logger_1'
+    >>> logger.propagate
+    False
+    >>> len(logger.handlers) >= 1
+    True
+
+    >>> logger = use_logger("my_logger_2", "log_save_path.log", "stdout")
+    >>> logger.name
+    'my_logger_2'
+    >>> any(handler.get_name() == "stdout" for handler in logger.handlers)
+    True
     """
     global _LOGGER
     # register (if necessary) and activate logger
