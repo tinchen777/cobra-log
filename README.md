@@ -89,7 +89,7 @@ pip install cobra-log[color]
 ## Requirements
 
 - Python >= 3.9
-- (Optional) `cobra-color` >= 1.3.11
+- (Optional) `cobra-color` >= 1.3.13
 
 ## License
 
